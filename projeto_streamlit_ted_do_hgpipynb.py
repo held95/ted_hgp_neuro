@@ -1,5 +1,5 @@
 
----
+
 
 ### 📄 `app.py` (final, com encoding e comentários)
 
