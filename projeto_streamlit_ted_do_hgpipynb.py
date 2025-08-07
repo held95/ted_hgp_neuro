@@ -3,7 +3,7 @@
 
 ### 📄 `app.py` (final, com encoding e comentários)
 
-```python
+python
 # -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
