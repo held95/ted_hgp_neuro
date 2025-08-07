@@ -1,10 +1,4 @@
 
-
-
-### 📄 `app.py` (final, com encoding e comentários)
-
-python
-# -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
 
