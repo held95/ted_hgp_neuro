@@ -12,7 +12,7 @@ import pandas as pd
 import io
 
 # URL do CSV no GitHub (RAW)
-CSV_URL = "https://raw.githubusercontent.com/usuario/repositorio/main/nome_arquivo.csv"
+CSV_URL = "https://github.com/held95/ted_hgp_neuro/raw/refs/heads/main/HOSP%20NCR%20-%2016-06-25%20a%2015-07-25.csv"
 
 # Função para carregar dados
 @st.cache_data
