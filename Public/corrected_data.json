@@ -1,0 +1,27 @@
+{
+  "TED_teste": [
+    {
+      "Nome": "Alan Pires",
+      "CRM": 101999,
+      "Valor ELET": 8375,
+      "Valor Amb": 0.0
+    },
+    {
+      "Nome": "Valor Total",
+      "CRM": null,
+      "Valor ELET": 421750,
+      "Valor Amb": 35559.99853340671
+    }
+  ],
+  "Mutirao": [
+    {
+      "Mutirão": 8375
+    }
+  ],
+  "Plantoes_resumo": [
+    {
+      "Nome do Médico": "GIOVANNA LUIZA CAXEIRO",
+      "Total de Horas": 78.06666666666666
+    }
+  ]
+}
