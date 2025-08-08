@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Visualizador de Dados TED</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+    }
+    input, select, textarea, button {
+      padding: 8px;
+      margin: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #eee;
+    }
+    .filter-section, .edit-section {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .download-btn {
+      background: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    h2 {
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Visualizador TED / Mutirão / Plantões</h1>
+
+  <div class="filter-section">
+    <input type="text" id="searchInput" placeholder="Buscar por nome...">
+    <button onclick="filterTable()">Filtrar</button>
+    <button onclick="resetTable()">Resetar</button>
+  </div>
+
+  <div class="edit-section">
+    <h3>Editar dados (temporariamente)</h3>
+    <textarea id="editArea" rows="6" style="width:100%"></textarea><br>
+    <button onclick="applyEdits()">Alterar</button>
+    <button onclick="downloadPDF()" class="download-btn">Baixar PDF</button>
+  </div>
+
+  <h2>Dados TED + Mutirão</h2>
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>CRM</th>
+        <th>Valor ELET</th>
+        <th>Valor Amb</th>
+        <th>Mutirão</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <h2>Resumo Plantões</h2>
+  <table id="plantoesTable">
+    <thead>
+      <tr>
+        <th>Nome do Médico</th>
+        <th>Total de Horas</th>
+      </tr>
+    </thead>
+    <tbody id="plantoesBody"></tbody>
+  </table>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    let jsonData;
+    let originalData;
+    let mutiraoData;
+    let plantoesData;
+
+    async function loadData() {
+      const response = await fetch("dados.json");
+      const data = await response.json();
+      jsonData = data.TED_teste;
+      mutiraoData = data.Mutirao;
+      plantoesData = data.Plantoes_resumo;
+
+      originalData = JSON.parse(JSON.stringify(jsonData));
+      renderTable(jsonData);
+      renderPlantoes(plantoesData);
+      document.getElementById("editArea").value = JSON.stringify(jsonData, null, 2);
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = "";
+      data.forEach((entry, index) => {
+        if (!entry.Nome || entry.Nome === "Valor Total") return;
+        const mutirao = mutiraoData[index]?.Mutirão || 0;
+        const row = `<tr>
+          <td>${entry.Nome}</td>
+          <td>${entry.CRM}</td>
+          <td>${entry["Valor ELET"]}</td>
+          <td>${entry["Valor Amb"].toFixed(2)}</td>
+          <td>${mutirao}</td>
+        </tr>`;
+        tbody.insertAdjacentHTML("beforeend", row);
+      });
+    }
+
+    function renderPlantoes(data) {
+      const tbody = document.getElementById("plantoesBody");
+      tbody.innerHTML = "";
+      data.forEach(entry => {
+        const row = `<tr>
+          <td>${entry["Nome do Médico"]}</td>
+          <td>${entry["Total de Horas"].toFixed(2)}</td>
+        </tr>`;
+        tbody.insertAdjacentHTML("beforeend", row);
+      });
+    }
+
+    function filterTable() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = jsonData.filter(entry => entry.Nome.toLowerCase().includes(query));
+      renderTable(filtered);
+    }
+
+    function resetTable() {
+      renderTable(jsonData);
+      document.getElementById("searchInput").value = "";
+    }
+
+    function applyEdits() {
+      try {
+        const updated = JSON.parse(document.getElementById("editArea").value);
+        jsonData = updated;
+        renderTable(jsonData);
+        alert("Dados atualizados! (temporariamente)");
+      } catch (e) {
+        alert("Erro no JSON editado. Verifique a sintaxe.");
+      }
+    }
+
+    function downloadPDF() {
+      const {{ jsPDF }} = window.jspdf;
+      const doc = new jsPDF();
+      let y = 10;
+      doc.text("Relatório TED - Dados Alterados", 10, y);
+      y += 10;
+      jsonData.forEach((entry, index) => {
+        if (!entry.Nome || entry.Nome === "Valor Total") return;
+        const mutirao = mutiraoData[index]?.Mutirão || 0;
+        doc.text(`Nome: ${entry.Nome}, CRM: ${entry.CRM}, ELET: ${entry["Valor ELET"]}, AMB: ${entry["Valor Amb"].toFixed(2)}, Mutirão: ${mutirao}`, 10, y);
+        y += 8;
+        if (y > 270) {
+          doc.addPage();
+          y = 10;
+        }
+      });
+      doc.save("relatorio_ted_alterado.pdf");
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
