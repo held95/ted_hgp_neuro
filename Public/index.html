@@ -90,22 +90,30 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    let jsonData;
-    let originalData;
-    let mutiraoData;
-    let plantoesData;
+    let jsonData = [];
+    let originalData = [];
+    let mutiraoData = [];
+    let plantoesData = [];
 
     async function loadData() {
-      const response = await fetch("dados.json");
-      const data = await response.json();
-      jsonData = data.TED_teste;
-      mutiraoData = data.Mutirao;
-      plantoesData = data.Plantoes_resumo;
+      try {
+        const response = await fetch("dados.json");
+        const data = await response.json();
 
-      originalData = JSON.parse(JSON.stringify(jsonData));
-      renderTable(jsonData);
-      renderPlantoes(plantoesData);
-      document.getElementById("editArea").value = JSON.stringify(jsonData, null, 2);
+        jsonData = data.TED_teste || [];
+        mutiraoData = data.Mutirao || [];
+        plantoesData = data.Plantoes_resumo || [];
+
+        originalData = JSON.parse(JSON.stringify(jsonData));
+
+        renderTable(jsonData);
+        renderPlantoes(plantoesData);
+
+        document.getElementById("editArea").value = JSON.stringify(jsonData, null, 2);
+      } catch (error) {
+        console.error("Erro ao carregar JSON:", error);
+        alert("Erro ao carregar dados. Verifique se o arquivo dados.json está no mesmo diretório.");
+      }
     }
 
     function renderTable(data) {
@@ -115,10 +123,10 @@
         if (!entry.Nome || entry.Nome === "Valor Total") return;
         const mutirao = mutiraoData[index]?.Mutirão || 0;
         const row = `<tr>
-          <td>${entry.Nome}</td>
-          <td>${entry.CRM}</td>
-          <td>${entry["Valor ELET"]}</td>
-          <td>${entry["Valor Amb"].toFixed(2)}</td>
+          <td>${entry.Nome || ""}</td>
+          <td>${entry.CRM || ""}</td>
+          <td>${entry["Valor ELET"] || 0}</td>
+          <td>${(entry["Valor Amb"] || 0).toFixed(2)}</td>
           <td>${mutirao}</td>
         </tr>`;
         tbody.insertAdjacentHTML("beforeend", row);
@@ -130,8 +138,8 @@
       tbody.innerHTML = "";
       data.forEach(entry => {
         const row = `<tr>
-          <td>${entry["Nome do Médico"]}</td>
-          <td>${entry["Total de Horas"].toFixed(2)}</td>
+          <td>${entry["Nome do Médico"] || ""}</td>
+          <td>${(entry["Total de Horas"] || 0).toFixed(2)}</td>
         </tr>`;
         tbody.insertAdjacentHTML("beforeend", row);
       });
@@ -139,7 +147,7 @@
 
     function filterTable() {
       const query = document.getElementById("searchInput").value.toLowerCase();
-      const filtered = jsonData.filter(entry => entry.Nome.toLowerCase().includes(query));
+      const filtered = jsonData.filter(entry => entry.Nome?.toLowerCase().includes(query));
       renderTable(filtered);
     }
 
@@ -160,7 +168,7 @@
     }
 
     function downloadPDF() {
-      const {{ jsPDF }} = window.jspdf;
+      const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       let y = 10;
       doc.text("Relatório TED - Dados Alterados", 10, y);
@@ -168,7 +176,7 @@
       jsonData.forEach((entry, index) => {
         if (!entry.Nome || entry.Nome === "Valor Total") return;
         const mutirao = mutiraoData[index]?.Mutirão || 0;
-        doc.text(`Nome: ${entry.Nome}, CRM: ${entry.CRM}, ELET: ${entry["Valor ELET"]}, AMB: ${entry["Valor Amb"].toFixed(2)}, Mutirão: ${mutirao}`, 10, y);
+        doc.text(`Nome: ${entry.Nome}, CRM: ${entry.CRM}, ELET: ${entry["Valor ELET"]}, AMB: ${(entry["Valor Amb"] || 0).toFixed(2)}, Mutirão: ${mutirao}`, 10, y);
         y += 8;
         if (y > 270) {
           doc.addPage();
@@ -178,7 +186,6 @@
       doc.save("relatorio_ted_alterado.pdf");
     }
 
-    loadData();
     document.addEventListener("DOMContentLoaded", loadData);
   </script>
 </body>
