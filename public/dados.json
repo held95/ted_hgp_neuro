@@ -456,3 +456,27 @@
     }
   ]
 }
+
+
+
+[
+  {"Nome": "ALBERTO FERNANDO OLIVEIRA", "CRM": "182265", "Total de Horas": "11:53"},
+  {"Nome": "ANA CAROLINA ROSSI ORTEGA DA SILVEIRA", "CRM": "142039", "Total de Horas": "57:33"},
+  {"Nome": "BRENDA GONÇALVES MACIEL", "CRM": "209082", "Total de Horas": "22:25"},
+  {"Nome": "DANILO DANTAS CARDOSO NEIVA LEMOS", "CRM": "220448", "Total de Horas": "11:23"},
+  {"Nome": "EMANUELA CAROLINA ZIPPO SILVA", "CRM": "228089", "Total de Horas": "21:17"},
+  {"Nome": "FERNANDA FENNER", "CRM": "215149", "Total de Horas": "35:19"},
+  {"Nome": "HETEVALDO TAVARES DE LIRA FILHO", "CRM": "248209", "Total de Horas": "57:50"},
+  {"Nome": "IGOR ALMEIDA DE OLIVEIRA", "CRM": "229907", "Total de Horas": "21:45"},
+  {"Nome": "IVAN GUSTAVO DO NASCIMENTO DOS SANTOS", "CRM": "228195", "Total de Horas": "98:31"},
+  {"Nome": "LORENNA CASTRO DI FILICE", "CRM": "241841", "Total de Horas": "20:15"},
+  {"Nome": "LUIZ GONZAGA DE OLIVEIRA JUNIOR", "CRM": "271278", "Total de Horas": "104:51"},
+  {"Nome": "MAURO SERGIO DOMIENIKAN", "CRM": "100869", "Total de Horas": "21:18"},
+  {"Nome": "PAULO RICARDO CORREA SCHMIDT", "CRM": "271613", "Total de Horas": "36:00"},
+  {"Nome": "PERSIO ANTUNES DA SILVA FILHO", "CRM": "231699", "Total de Horas": "20:13"},
+  {"Nome": "RENATO BARRADAS RODRIGUES", "CRM": "241115", "Total de Horas": "22:10"},
+  {"Nome": "RONALDO BARBOSA DE FARIAS JUNIOR", "CRM": "22589CE", "Total de Horas": "11:42"},
+  {"Nome": "THIAGO CARLOS DE ARAUJO", "CRM": "184240", "Total de Horas": "163:18"},
+  {"Nome": "THIAGO CAVALCANTE PEREIRA", "CRM": "243244", "Total de Horas": "12:38"},
+  {"Nome": "VICTOR GUIMARÃES DE ALMEIDA", "CRM": "238665", "Total de Horas": "127:48"}
+]
