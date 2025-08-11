@@ -496,8 +496,6 @@
   ],
   "Plantoes_resumo": [
     {
-  "Plantoes_resumo": [
-    {
       "Nome do Médico": "GIOVANNA LUIZA CAXEIRO ",
       "Total de Horas": 78.06666666666666
     },
@@ -508,50 +506,32 @@
   ],
   "Resumo_Plantao_HOSP_NCR_PLANT": [
     {
-      "dados": [
-        {
-          "DATA": "2025-06-16 00:00:00",
-          "PER": "diurno",
-          "DS": "seg",
-          "QUEM REALIZOU": "ANA CAROLINA ROSSI ORTEGA DA SILVEIRA",
-          "CRM": "142039",
-          "FUNCÃO": "PLANTONISTA",
-          "ESPECIALIDADE": "NEUROCIRURGIA ",
-          "ENTRADA": "07:11",
-          "SAIDA": "19:21",
-          "HS": "12:10:00",
-          "VALOR HORA": 204,
-          "VALOR TOTAL R$": 2482.0
-        },
-        {
-          "DATA": "2025-06-16 00:00:00",
-          "PER": "diurno",
-          "DS": "seg",
-          "QUEM REALIZOU": "MAURO SERGIO DOMIENIKAN",
-          "CRM": "100869",
-          "FUNCÃO": "PLANTONISTA",
-          "ESPECIALIDADE": "NEUROCIRURGIA ",
-          "ENTRADA": "08:01",
-          "SAIDA": "19:25",
-          "HS": "11:24:00",
-          "VALOR HORA": 204,
-          "VALOR TOTAL R$": 2325.6
-        },
-        {
-          "DATA": "2025-06-16 00:00:00",
-          "PER": "noturno",
-          "DS": "seg",
-          "QUEM REALIZOU": "VICTOR GUIMARÃES DE ALMEIDA",
-          "CRM": "238665",
-          "FUNCÃO": "PLANTONISTA",
-          "ESPECIALIDADE": "NEUROCIRURGIA ",
-          "ENTRADA": "19:11",
-          "SAIDA": "05:49",
-          "HS": "10:38:00",
-          "VALOR HORA": 204,
-          "VALOR TOTAL R$": 2169.2
-        }
-      ]
+      "DATA": "2025-06-16 00:00:00",
+      "PER": "diurno",
+      "DS": "seg",
+      "QUEM REALIZOU": "ANA CAROLINA ROSSI ORTEGA DA SILVEIRA",
+      "CRM": "142039",
+      "FUNCÃO": "PLANTONISTA",
+      "ESPECIALIDADE": " NEUROCIRURGIA",
+      "ENTRADA": "07:11",
+      "SAIDA": "19:21",
+      "HS": "12:10:00",
+      "VALOR HORA": 204,
+      "VALOR TOTAL R$": 2482.0
+    },
+    {
+      "DATA": "2025-06-16 00:00:00",
+      "PER": "diurno",
+      "DS": "seg",
+      "QUEM REALIZOU": "MAURO SERGIO DOMIENIKAN",
+      "CRM": "100869",
+      "FUNCÃO": "PLANTONISTA",
+      "ESPECIALIDADE": "NEUROCIRURGIA",
+      "ENTRADA": "08:01",
+      "SAIDA": "19:25",
+      "HS": "11:24:00",
+      "VALOR HORA": 204,
+      "VALOR TOTAL R$": 2325.6
     }
   ]
 }
