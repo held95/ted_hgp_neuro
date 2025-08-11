@@ -93,7 +93,7 @@
 
   <div class="tabs">
     <div class="tab active" id="tab-ted" onclick="showTab('ted')">Dados TED + Mutirão</div>
-    <div class="tab" id="tab-plantao" onclick="showTab('plantao')">resumo_plantao_HOSP_NCR - PLANT</div>
+    <div class="tab" id="tab-resumo" onclick="showTab('resumo')">Resumo_Plantao_HOSP_NCR - PLANT</div>
   </div>
 
   <div id="tabContent-ted" class="tab-content">
@@ -105,41 +105,40 @@
           <th>Valor ELET</th>
           <th>Valor Amb</th>
           <th>Mutirão</th>
-          <th>Horas Neuro</th> <!-- Coluna adicionada -->
+          <th>Horas Neuro</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
     </table>
   </div>
 
-  <div id="tabContent-plantao" class="tab-content" style="display:none;">
-    <table id="plantoesTable">
+  <div id="tabContent-resumo" class="tab-content" style="display:none;">
+    <table id="resumoTable">
       <thead>
         <tr>
-          <th>Data</th>
-          <th>Per</th>
+          <th>DATA</th>
+          <th>PER</th>
           <th>DS</th>
-          <th>Quem Realizou</th>
+          <th>QUEM REALIZOU</th>
           <th>CRM</th>
-          <th>Função</th>
-          <th>Especialidade</th>
-          <th>Entrada</th>
-          <th>Saída</th>
-          <th>Horas</th>
-          <th>Valor Hora</th>
-          <th>Valor Total R$</th>
+          <th>FUNCÃO</th>
+          <th>ESPECIALIDADE</th>
+          <th>ENTRADA</th>
+          <th>SAIDA</th>
+          <th>HS</th>
+          <th>VALOR HORA</th>
+          <th>VALOR TOTAL R$</th>
         </tr>
       </thead>
-      <tbody id="plantoesBody"></tbody>
+      <tbody id="resumoBody"></tbody>
     </table>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
     let jsonData = [];
-    let originalData = [];
     let mutiraoData = [];
-    let plantoesData = [];
+    let resumoPlantaoData = [];
 
     async function loadData() {
       try {
@@ -148,12 +147,11 @@
 
         jsonData = data.TED_teste || [];
         mutiraoData = data.Mutirao || [];
-        plantoesData = data.Plantoes_resumo || [];
-
-        originalData = JSON.parse(JSON.stringify(jsonData));
+        resumoPlantaoData = data.Resumo_Plantao_HOSP_NCR_PLANT || [];
 
         renderTable(jsonData);
-        renderPlantoes(plantoesData);
+        renderMutirao(mutiraoData);
+        renderResumoPlantao(resumoPlantaoData);
 
         document.getElementById("editArea").value = JSON.stringify(jsonData, null, 2);
       } catch (error) {
@@ -162,13 +160,14 @@
       }
     }
 
+    // Renderiza a tabela TED + Mutirão
     function renderTable(data) {
       const tbody = document.getElementById("tableBody");
       tbody.innerHTML = "";
       data.forEach((entry, index) => {
         if (!entry.Nome || entry.Nome === "Valor Total") return;
         const mutirao = mutiraoData[index]?.Mutirão || 0;
-        const horasNeuro = entry["Horas Neuro"] || 0; // Novo campo adicionado
+        const horasNeuro = entry["Horas Neuro"] || 0;
         const row = `<tr>
           <td>${entry.Nome || ""}</td>
           <td>${entry.CRM || ""}</td>
@@ -181,8 +180,9 @@
       });
     }
 
-    function renderPlantoes(data) {
-      const tbody = document.getElementById("plantoesBody");
+    // Renderiza a tabela resumo_plantao
+    function renderResumoPlantao(data) {
+      const tbody = document.getElementById("resumoBody");
       tbody.innerHTML = "";
       data.forEach(entry => {
         const row = `<tr>
@@ -205,7 +205,6 @@
 
     function filterTable() {
       const query = document.getElementById("searchInput").value.toLowerCase();
-      // Filtrar apenas na aba TED, por simplicidade
       const filtered = jsonData.filter(entry => entry.Nome?.toLowerCase().includes(query));
       renderTable(filtered);
     }
@@ -232,9 +231,9 @@
       let y = 10;
       doc.text("Relatório TED - Dados Alterados", 10, y);
       y += 10;
-      jsonData.forEach((entry, index) => {
+      jsonData.forEach(entry => {
         if (!entry.Nome || entry.Nome === "Valor Total") return;
-        const mutirao = mutiraoData[index]?.Mutirão || 0;
+        const mutirao = mutiraoData.find(m => m.Nome === entry.Nome)?.Mutirão || 0;
         const horasNeuro = entry["Horas Neuro"] || 0;
         doc.text(
           `Nome: ${entry.Nome}, CRM: ${entry.CRM}, ELET: ${entry["Valor ELET"]}, AMB: ${(entry["Valor Amb"] || 0).toFixed(2)}, Mutirão: ${mutirao}, Horas Neuro: ${horasNeuro}`,
@@ -250,9 +249,8 @@
       doc.save("relatorio_ted_alterado.pdf");
     }
 
-    // Função para alternar abas
     function showTab(tabName) {
-      const tabs = ["ted", "plantao"];
+      const tabs = ["ted", "resumo"];
       tabs.forEach(name => {
         document.getElementById("tabContent-" + name).style.display = name === tabName ? "block" : "none";
         document.getElementById("tab-" + name).classList.toggle("active", name === tabName);
