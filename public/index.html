@@ -14,9 +14,11 @@
     }
     input, select, textarea, button {
       padding: 8px;
-      margin: 5px;
+      margin: 5px 0;
       border-radius: 5px;
       border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
     }
     table {
       width: 100%;
@@ -73,6 +75,18 @@
       border: 1px solid #ccc;
       border-radius: 0 10px 10px 10px;
     }
+
+    /* Botão salvar estilizado */
+    .btn-salvar {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background:#4CAF50;
+      color:#fff;
+      border:none;
+      border-radius:5px;
+      cursor:pointer;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
@@ -85,15 +99,19 @@
   </div>
 
   <div class="edit-section">
-    <h3>Editar dados (temporariamente)</h3>
-    <textarea id="editArea" rows="6" style="width:100%"></textarea><br />
-    <button onclick="applyEdits()">Alterar</button>
-    <button onclick="downloadPDF()" class="download-btn">Baixar PDF</button>
+    <h3>Editar Horas Neuro do Médico</h3>
+    <label for="medicoSelect">Selecione o médico:</label><br />
+    <select id="medicoSelect" style="width: 100%; padding: 8px; margin: 8px 0;"></select><br />
+
+    <label for="horasInput">Horas Neuro:</label><br />
+    <input type="number" id="horasInput" step="0.01" min="0" style="width: 100%; padding: 8px;" /><br />
+
+    <button class="btn-salvar" onclick="salvarHoras()">Salvar Alteração</button>
   </div>
 
   <div class="tabs">
     <div class="tab active" id="tab-ted" onclick="showTab('ted')">Dados TED + Mutirão</div>
-    <div class="tab" id="tab-plantao" onclick="showTab('plantao')">Resumo Plantão HOSP NCR - PLANT</div>
+    <div class="tab" id="tab-plantao" onclick="showTab('plantao')">resumo_plantao_HOSP_NCR - PLANT</div>
   </div>
 
   <div id="tabContent-ted" class="tab-content">
@@ -143,14 +161,11 @@
 
     async function loadData() {
       try {
-        // Troque o caminho abaixo pelo seu arquivo JSON real
         const response = await fetch("dados.json");
         const data = await response.json();
 
         jsonData = data.TED_teste || [];
         mutiraoData = data.Mutirao || [];
-
-        // Corrigido: Usar o nome correto para os plantões da aba "Resumo_Plantao_HOSP_NCR_PLANT"
         plantoesData = data.Resumo_Plantao_HOSP_NCR_PLANT || [];
 
         originalData = JSON.parse(JSON.stringify(jsonData));
@@ -158,8 +173,7 @@
         renderTable(jsonData);
         renderPlantoes(plantoesData);
 
-        // Colocar o JSON TED na área de edição para edição manual
-        document.getElementById("editArea").value = JSON.stringify(jsonData, null, 2);
+        preencherSelectMedicos();
       } catch (error) {
         console.error("Erro ao carregar JSON:", error);
         alert("Erro ao carregar dados. Verifique se o arquivo dados.json está no mesmo diretório.");
@@ -169,26 +183,17 @@
     function renderTable(data) {
       const tbody = document.getElementById("tableBody");
       tbody.innerHTML = "";
-
       data.forEach((entry, index) => {
-        // Pular linhas inválidas ou resumo, como "Valor Total"
-        if (!entry.Nome || entry.Nome.toLowerCase().includes("valor total") || entry.Nome.toLowerCase().includes("médico")) return;
-
-        // Usar mutirão do índice correto, se existir; senão 0
-        const mutirao = mutiraoData[index]?.Mutirão ?? 0;
-
-        // Formatar valores numéricos com duas casas decimais onde faz sentido
-        const valorElet = Number(entry["Valor ELET"]) || 0;
-        const valorAmb = Number(entry["Valor Amb"]) || 0;
-        const horasNeuro = Number(entry["Horas Neuro"]) || 0;
-
+        if (!entry.Nome || entry.Nome.toLowerCase() === "valor total" || entry.Nome.toLowerCase() === "médico") return;
+        const mutirao = mutiraoData[index]?.Mutirão || 0;
+        const horasNeuro = entry["Horas Neuro"] || 0;
         const row = `<tr>
-          <td>${entry.Nome}</td>
-          <td>${entry.CRM}</td>
-          <td>${valorElet.toLocaleString('pt-BR')}</td>
-          <td>${valorAmb.toFixed(2)}</td>
-          <td>${mutirao.toLocaleString('pt-BR')}</td>
-          <td>${horasNeuro.toFixed(2)}</td>
+          <td>${entry.Nome || ""}</td>
+          <td>${entry.CRM || ""}</td>
+          <td>${entry["Valor ELET"] || 0}</td>
+          <td>${(entry["Valor Amb"] || 0).toFixed(2)}</td>
+          <td>${mutirao}</td>
+          <td>${horasNeuro}</td>
         </tr>`;
         tbody.insertAdjacentHTML("beforeend", row);
       });
@@ -197,16 +202,9 @@
     function renderPlantoes(data) {
       const tbody = document.getElementById("plantoesBody");
       tbody.innerHTML = "";
-
       data.forEach(entry => {
-        // Formatar data para mostrar só data (sem hora) — opcional
-        let dataFormatada = entry.DATA;
-        if(dataFormatada) {
-          dataFormatada = dataFormatada.split(' ')[0]; // só a parte da data
-        }
-
         const row = `<tr>
-          <td>${dataFormatada || ""}</td>
+          <td>${entry.DATA || ""}</td>
           <td>${entry.PER || ""}</td>
           <td>${entry.DS || ""}</td>
           <td>${entry["QUEM REALIZOU"] || ""}</td>
@@ -230,46 +228,62 @@
     }
 
     function resetTable() {
-      document.getElementById("searchInput").value = "";
       renderTable(jsonData);
+      document.getElementById("searchInput").value = "";
     }
 
-    function applyEdits() {
-      try {
-        const updated = JSON.parse(document.getElementById("editArea").value);
-        jsonData = updated;
-        renderTable(jsonData);
-        alert("Dados atualizados! (temporariamente)");
-      } catch (e) {
-        alert("Erro no JSON editado. Verifique a sintaxe.");
+    // Preenche o select com os nomes dos médicos
+    function preencherSelectMedicos() {
+      const select = document.getElementById("medicoSelect");
+      select.innerHTML = "";
+
+      jsonData.forEach((medico, i) => {
+        if (medico.Nome && medico.Nome.toLowerCase() !== "médico" && medico.Nome.toLowerCase() !== "valor total") {
+          const option = document.createElement("option");
+          option.value = i;
+          option.textContent = medico.Nome;
+          select.appendChild(option);
+        }
+      });
+
+      // Atualiza input de horas ao mudar seleção
+      select.addEventListener("change", () => {
+        const idx = select.value;
+        if (jsonData[idx]) {
+          document.getElementById("horasInput").value = jsonData[idx]["Horas Neuro"] || 0;
+        }
+      });
+
+      // Inicializa com o primeiro médico selecionado
+      if (select.options.length > 0) {
+        select.selectedIndex = 0;
+        const idx = select.value;
+        document.getElementById("horasInput").value = jsonData[idx]["Horas Neuro"] || 0;
       }
     }
 
-    function downloadPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      let y = 10;
-      doc.text("Relatório TED - Dados Alterados", 10, y);
-      y += 10;
-      jsonData.forEach(entry => {
-        if (!entry.Nome || entry.Nome.toLowerCase().includes("valor total") || entry.Nome.toLowerCase().includes("médico")) return;
-        const mutirao = mutiraoData.find((m, i) => i === jsonData.indexOf(entry))?.Mutirão || 0;
-        const horasNeuro = Number(entry["Horas Neuro"]) || 0;
-        const linha = `Nome: ${entry.Nome}, CRM: ${entry.CRM}, ELET: ${entry["Valor ELET"]}, AMB: ${(entry["Valor Amb"] || 0).toFixed(2)}, Mutirão: ${mutirao}, Horas Neuro: ${horasNeuro.toFixed(2)}`;
-        doc.text(linha, 10, y);
-        y += 8;
-        if (y > 270) {
-          doc.addPage();
-          y = 10;
-        }
-      });
-      doc.save("relatorio_ted_alterado.pdf");
+    // Salva novo valor de Horas Neuro e atualiza tabela
+    function salvarHoras() {
+      const select = document.getElementById("medicoSelect");
+      const idx = select.value;
+      const novoValor = parseFloat(document.getElementById("horasInput").value);
+
+      if (isNaN(novoValor) || novoValor < 0) {
+        alert("Por favor, informe um valor válido para as horas.");
+        return;
+      }
+
+      jsonData[idx]["Horas Neuro"] = novoValor;
+
+      renderTable(jsonData);
+      alert(`Horas Neuro atualizadas para ${jsonData[idx].Nome}: ${novoValor}`);
     }
 
+    // Alterna abas
     function showTab(tabName) {
       const tabs = ["ted", "plantao"];
       tabs.forEach(name => {
-        document.getElementById("tabContent-" + name).style.display = (name === tabName) ? "block" : "none";
+        document.getElementById("tabContent-" + name).style.display = name === tabName ? "block" : "none";
         document.getElementById("tab-" + name).classList.toggle("active", name === tabName);
       });
     }
