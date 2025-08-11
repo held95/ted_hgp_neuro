@@ -505,4 +505,76 @@
     }
   ]
 }
-
+{"resumo_plantao_HOSP_NCR - PLANT": [
+    {
+      "DATA": "2025-06-16",
+      "PER": "diurno",
+      "DS": "seg",
+      "QUEM REALIZOU": "ANA CAROLINA ROSSI ORTEGA DA SILVEIRA",
+      "CRM": 142039,
+      "FUNÇÃO": "PLANTONISTA",
+      "ESPECIALIDADE": "NEUROCIRURGIA",
+      "ENTRADA": "07:11",
+      "SAIDA": "19:21",
+      "HS": "12:10:00",
+      "VALOR HORA": 204,
+      "VALOR TOTAL R$": 2482
+    },
+    {
+      "DATA": "2025-06-16",
+      "PER": "diurno",
+      "DS": "seg",
+      "QUEM REALIZOU": "MAURO SERGIO DOMIENIKAN",
+      "CRM": 100869,
+      "FUNÇÃO": "PLANTONISTA",
+      "ESPECIALIDADE": "NEUROCIRURGIA",
+      "ENTRADA": "08:01",
+      "SAIDA": "19:25",
+      "HS": "11:24:00",
+      "VALOR HORA": 204,
+      "VALOR TOTAL R$": 2325.6
+    },
+    {
+      "DATA": "2025-06-16",
+      "PER": "diurno",
+      "DS": "seg",
+      "QUEM REALIZOU": "ANA CAROLINA ROSSI ORTEGA DA SILVEIRA",
+      "CRM": 142039,
+      "FUNÇÃO": "PLANTONISTA",
+      "ESPECIALIDADE": "NEUROCIRURGIA",
+      "ENTRADA": "07:11",
+      "SAIDA": "19:21",
+      "HS": "12:10:00",
+      "VALOR HORA": 204,
+      "VALOR TOTAL R$": 2482
+    },
+    {
+      "DATA": "2025-06-16",
+      "PER": "diurno",
+      "DS": "seg",
+      "QUEM REALIZOU": "MAURO SERGIO DOMIENIKAN",
+      "CRM": 100869,
+      "FUNÇÃO": "PLANTONISTA",
+      "ESPECIALIDADE": "NEUROCIRURGIA",
+      "ENTRADA": "08:01",
+      "SAIDA": "19:25",
+      "HS": "11:24:00",
+      "VALOR HORA": 204,
+      "VALOR TOTAL R$": 2325.6
+    },
+    {
+      "DATA": "2025-06-17",
+      "PER": "diurno",
+      "DS": "ter",
+      "QUEM REALIZOU": "MAURO SERGIO DOMIENIKAN",
+      "CRM": 100869,
+      "FUNÇÃO": "PLANTONISTA",
+      "ESPECIALIDADE": "NEUROCIRURGIA",
+      "ENTRADA": "07:01",
+      "SAIDA": "19:01",
+      "HS": "12:00:00",
+      "VALOR HORA": 204,
+      "VALOR TOTAL R$": 2448
+    }
+]
+}
