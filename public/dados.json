@@ -20,8 +20,336 @@
       "Valor ELET": 0,
       "Valor Amb": 0.0,
       "Horas Neuro": 57.55
+    },
+    {
+      "Nome": "Bianca Soler Montagner",
+      "CRM": 200329,
+      "Valor ELET": 18750,
+      "Valor Amb": 1504.999937929615,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Bruno Barros Britto",
+      "CRM": 220144,
+      "Valor ELET": 18125,
+      "Valor Amb": 507.4999790692887,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Daniel Moraes Domingos",
+      "CRM": 139043,
+      "Valor ELET": 32000,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Douglas Sterzza Dias",
+      "CRM": 176627,
+      "Valor ELET": 36500,
+      "Valor Amb": 1749.999927825133,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Elisa Maria De Camargo Aranzana",
+      "CRM": 120919,
+      "Valor ELET": 14625,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Emanuela Carolina Zippo Silva",
+      "CRM": 228089,
+      "Valor ELET": 0,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 21.2833
+    },
+    {
+      "Nome": "Felipe Maia Vieira",
+      "CRM": 172305,
+      "Valor ELET": 8000,
+      "Valor Amb": 4129.999829667315,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Fernanda Fenner",
+      "CRM": 215149,
+      "Valor ELET": 0,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 35.3166
+    },
+    {
+      "Nome": "Fernanda Paixao De Araujo Feitosa",
+      "CRM": 219538,
+      "Valor ELET": 10625,
+      "Valor Amb": 839.999965356064,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Gabriella Rosceli Campos Zerbetto",
+      "CRM": 198866,
+      "Valor ELET": 11000,
+      "Valor Amb": 734.999969686556,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Gilvana Raimunda Machado Dos Santos Miyashiro",
+      "CRM": 202368,
+      "Valor ELET": 11500,
+      "Valor Amb": 2309.999904729176,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Giovani De Oliveira Sousa",
+      "CRM": 217367,
+      "Valor ELET": 0,
+      "Valor Amb": 699.9999711300534,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Guilherme Romero Prado",
+      "CRM": 191527,
+      "Valor ELET": 6000,
+      "Valor Amb": 349.9999855650267,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Gustavo Bonilha Lisboa",
+      "CRM": 158488,
+      "Valor ELET": 6000,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Hebert De Freitas Fiorucci",
+      "CRM": 217673,
+      "Valor ELET": 4750,
+      "Valor Amb": 979.9999595820747,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Hellierson Castro David",
+      "CRM": 195932,
+      "Valor ELET": 1500,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Helmut Ronny Dolz Tejerina",
+      "CRM": 181271,
+      "Valor ELET": 17375,
+      "Valor Amb": 1049.99995669508,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Heloisa Soares Vendrameto",
+      "CRM": 200367,
+      "Valor ELET": 5250,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Helvio Geraldo Nunes Junior",
+      "CRM": 75679,
+      "Valor ELET": 22000,
+      "Valor Amb": 1924.999920607647,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Hetevaldo Tavares De Lira Filho",
+      "CRM": 248209,
+      "Valor ELET": 0,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 57.8333
+    },
+    {
+      "Nome": "Igor Renato Louro Bruno De Abreu",
+      "CRM": 120971,
+      "Valor ELET": 3500,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Isabella Moraes Costa",
+      "CRM": 203196,
+      "Valor ELET": 8500,
+      "Valor Amb": 2379.999901842181,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Ivan Gustavo Do Nascimento Dos Santos",
+      "CRM": 228195,
+      "Valor ELET": 0,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 98.5166
+    },
+    {
+      "Nome": "Joao Victor Lucas De Almeida Ramiro",
+      "CRM": 213701,
+      "Valor ELET": 13125,
+      "Valor Amb": 1504.999937929615,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Jose Herminio Donizete Milani Junior",
+      "CRM": 130361,
+      "Valor ELET": 31000,
+      "Valor Amb": 3692.499847711031,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Juan Carlos Vasquez Rios",
+      "CRM": 170311,
+      "Valor ELET": 3500,
+      "Valor Amb": 314.999987008524,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Juliana Paula Geissler",
+      "CRM": 101091,
+      "Valor ELET": 5500,
+      "Valor Amb": 1644.999932155625,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Lucas Da Costa Kalif",
+      "CRM": 243802,
+      "Valor ELET": 17250,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Lucas Mega De Andrade",
+      "CRM": 151270,
+      "Valor ELET": 6250,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Luiz Gonzaga De Oliveira Junior",
+      "CRM": 271278,
+      "Valor ELET": 0,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 104.85
+    },
+    {
+      "Nome": "Luiza Oliveira Tocantins Alvares",
+      "CRM": 211754,
+      "Valor ELET": 10000,
+      "Valor Amb": 1049.99995669508,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Marcelo De Oliveira Mourao Junior",
+      "CRM": 212139,
+      "Valor ELET": 0,
+      "Valor Amb": 2309.999904729176,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Marlon Augusto Schiocchet Monarim",
+      "CRM": 150507,
+      "Valor ELET": 14000,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Mauro Sergio Domienikan",
+      "CRM": 100869,
+      "Valor ELET": 0,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 21.3
+    },
+    {
+      "Nome": "Médico",
+      "CRM": "CRM ",
+      "Valor ELET": 0,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Odara Caroliny Dos Santos",
+      "CRM": 213868,
+      "Valor ELET": 250,
+      "Valor Amb": 559.9999769040427,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Paulo Ricardo Correa Schmidt",
+      "CRM": 271613,
+      "Valor ELET": 0,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 36
+    },
+    {
+      "Nome": "Renato Barradas Rodrigues",
+      "CRM": 241115,
+      "Valor ELET": 0,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 22.1666
+    },
+    {
+      "Nome": "Roberto Eduardo Donoso Rivero",
+      "CRM": 187870,
+      "Valor ELET": 2000,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Ronara Gomes Pavoni",
+      "CRM": 200126,
+      "Valor ELET": 6000,
+      "Valor Amb": 524.99997834754,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Sammy Zogheib Madalon",
+      "CRM": 153455,
+      "Valor ELET": 9500,
+      "Valor Amb": 437.4999819562833,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Thais Yuka Takahashi",
+      "CRM": 158534,
+      "Valor ELET": 6000,
+      "Valor Amb": 1224.999949477593,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Thatiany Da Silva Lima",
+      "CRM": 220299,
+      "Valor ELET": 4250,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "Thiago Carlos De Araujo",
+      "CRM": 184240,
+      "Valor ELET": 0,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 163.3
+    },
+    {
+      "Nome": "Victor Guimarães De Almeida",
+      "CRM": 238665,
+      "Valor ELET": 0,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 127.8
+    },
+    {
+      "Nome": "Wellington Forte Alves Junior",
+      "CRM": 202341,
+      "Valor ELET": 6500,
+      "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "William Guidini Lima",
+      "CRM": 160514,
+      "Valor ELET": 8750,
+      "Valor Amb": 279.9999884520213,
+      "Horas Neuro": 0
     }
-    /* ... restantes dos dados TED_teste ... */
   ],
   "Mutirao": [
     {
@@ -29,8 +357,142 @@
     },
     {
       "Mutirão": 4375
+    },
+    {
+      "Mutirão": 4250
+    },
+    {
+      "Mutirão": 10500
+    },
+    {
+      "Mutirão": 14625
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 5750
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 4750
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 10125
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 6250
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 4250
+    },
+    {
+      "Mutirão": 5750
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 5250
+    },
+    {
+      "Mutirão": 8250
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 5250
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 14750
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 6500
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
     }
-    /* ... restantes dos dados Mutirao ... */
   ],
   "Plantoes_resumo": [
     {
@@ -41,36 +503,5 @@
       "Nome do Médico": "VICTORIA JARDIM KOURY LOPES ",
       "Total de Horas": 33.75
     }
-  ],
-  "resumo_plantao_HOSP_NCR_PLANT": [
-    {
-      "DATA": "2025-06-16",
-      "PER": "diurno",
-      "DS": "seg",
-      "QUEM REALIZOU": "ANA CAROLINA ROSSI ORTEGA DA SILVEIRA",
-      "CRM": 142039,
-      "FUNÇÃO": "PLANTONISTA",
-      "ESPECIALIDADE": "NEUROCIRURGIA",
-      "ENTRADA": "07:11",
-      "SAIDA": "19:21",
-      "HS": "12:10:00",
-      "VALOR HORA": 204,
-      "VALOR TOTAL R$": 2482
-    },
-    {
-      "DATA": "2025-06-16",
-      "PER": "diurno",
-      "DS": "seg",
-      "QUEM REALIZOU": "MAURO SERGIO DOMIENIKAN",
-      "CRM": 100869,
-      "FUNÇÃO": "PLANTONISTA",
-      "ESPECIALIDADE": "NEUROCIRURGIA",
-      "ENTRADA": "08:01",
-      "SAIDA": "19:25",
-      "HS": "11:24:00",
-      "VALOR HORA": 204,
-      "VALOR TOTAL R$": 2325.6
-    }
-    /* ... demais registros resumo_plantao_HOSP_NCR_PLANT ... */
   ]
 }
