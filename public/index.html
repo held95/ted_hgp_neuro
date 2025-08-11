@@ -12,7 +12,7 @@
     h1 {
       text-align: center;
     }
-    input, select, textarea, button {
+    input, select, button {
       padding: 8px;
       margin: 5px 0;
       border-radius: 5px;
@@ -99,11 +99,11 @@
   </div>
 
   <div class="edit-section">
-    <h3>Editar Horas Neuro do Médico</h3>
+    <h3>Editar Horas do Médico (Resumo Plantão)</h3>
     <label for="medicoSelect">Selecione o médico:</label><br />
     <select id="medicoSelect" style="width: 100%; padding: 8px; margin: 8px 0;"></select><br />
 
-    <label for="horasInput">Horas Neuro:</label><br />
+    <label for="horasInput">Horas:</label><br />
     <input type="number" id="horasInput" step="0.01" min="0" style="width: 100%; padding: 8px;" /><br />
 
     <button class="btn-salvar" onclick="salvarHoras()">Salvar Alteração</button>
@@ -111,7 +111,7 @@
 
   <div class="tabs">
     <div class="tab active" id="tab-ted" onclick="showTab('ted')">Dados TED + Mutirão</div>
-    <div class="tab" id="tab-plantao" onclick="showTab('plantao')">resumo_plantao_HOSP_NCR - PLANT</div>
+    <div class="tab" id="tab-plantao" onclick="showTab('plantao')">Resumo Plantão HOSP NCR - PLANT</div>
   </div>
 
   <div id="tabContent-ted" class="tab-content">
@@ -154,10 +154,9 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    let jsonData = [];
-    let originalData = [];
+    let jsonData = [];           // TED + Mutirão
     let mutiraoData = [];
-    let plantoesData = [];
+    let plantoesData = [];       // Resumo_Plantao_HOSP_NCR_PLANT
 
     async function loadData() {
       try {
@@ -167,8 +166,6 @@
         jsonData = data.TED_teste || [];
         mutiraoData = data.Mutirao || [];
         plantoesData = data.Resumo_Plantao_HOSP_NCR_PLANT || [];
-
-        originalData = JSON.parse(JSON.stringify(jsonData));
 
         renderTable(jsonData);
         renderPlantoes(plantoesData);
@@ -180,25 +177,46 @@
       }
     }
 
+    // Renderiza a tabela TED + Mutirão, atualizando "Horas Neuro" com soma de horas da aba plantao
     function renderTable(data) {
+      // Cria um mapa para somar horas do resumo_plantao por médico
+      const somaHorasPorMedico = {};
+
+      plantoesData.forEach(item => {
+        const nome = item["QUEM REALIZOU"]?.trim().toLowerCase() || "";
+        const horasStr = item.HS || "00:00:00";
+        const horasDec = converterTempoDecimal(horasStr);
+
+        if (!somaHorasPorMedico[nome]) {
+          somaHorasPorMedico[nome] = 0;
+        }
+        somaHorasPorMedico[nome] += horasDec;
+      });
+
       const tbody = document.getElementById("tableBody");
       tbody.innerHTML = "";
       data.forEach((entry, index) => {
         if (!entry.Nome || entry.Nome.toLowerCase() === "valor total" || entry.Nome.toLowerCase() === "médico") return;
         const mutirao = mutiraoData[index]?.Mutirão || 0;
-        const horasNeuro = entry["Horas Neuro"] || 0;
+        const nomeKey = entry.Nome.trim().toLowerCase();
+        const horasNeuro = somaHorasPorMedico[nomeKey] || 0;
+
+        // Atualiza também no jsonData (em memória)
+        jsonData[index]["Horas Neuro"] = horasNeuro;
+
         const row = `<tr>
           <td>${entry.Nome || ""}</td>
           <td>${entry.CRM || ""}</td>
           <td>${entry["Valor ELET"] || 0}</td>
           <td>${(entry["Valor Amb"] || 0).toFixed(2)}</td>
           <td>${mutirao}</td>
-          <td>${horasNeuro}</td>
+          <td>${horasNeuro.toFixed(2)}</td>
         </tr>`;
         tbody.insertAdjacentHTML("beforeend", row);
       });
     }
 
+    // Renderiza tabela resumo_plantao (plantoesData)
     function renderPlantoes(data) {
       const tbody = document.getElementById("plantoesBody");
       tbody.innerHTML = "";
@@ -221,69 +239,148 @@
       });
     }
 
+    // Função para converter tempo HH:MM:SS em número decimal de horas
+    function converterTempoDecimal(hhmmss) {
+      const partes = hhmmss.split(":");
+      if (partes.length !== 3) return 0;
+      const h = parseInt(partes[0], 10) || 0;
+      const m = parseInt(partes[1], 10) || 0;
+      const s = parseInt(partes[2], 10) || 0;
+      return h + m / 60 + s / 3600;
+    }
+
+    // Função para converter decimal em HH:MM:SS para mostrar no campo de horas no resumo plantão
+    function converterDecimalParaHHMMSS(decimalHours) {
+      const h = Math.floor(decimalHours);
+      const m = Math.floor((decimalHours - h) * 60);
+      const s = Math.round(((decimalHours - h) * 60 - m) * 60);
+      const pad = n => String(n).padStart(2, '0');
+      return `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+
+    // Preenche select com médicos únicos do resumo plantao (quem realizou)
+    function preencherSelectMedicos() {
+      const select = document.getElementById("medicoSelect");
+      select.innerHTML = "";
+
+      // Extrair nomes únicos do resumo plantao (plantoesData)
+      const nomesUnicos = [...new Set(plantoesData.map(item => item["QUEM REALIZOU"].trim()))].sort();
+
+      nomesUnicos.forEach(nome => {
+        const option = document.createElement("option");
+        option.value = nome;
+        option.textContent = nome;
+        select.appendChild(option);
+      });
+
+      // Atualiza input horas ao mudar seleção
+      select.addEventListener("change", () => {
+        atualizarHorasInput();
+      });
+
+      // Inicializa com o primeiro médico
+      if (select.options.length > 0) {
+        select.selectedIndex = 0;
+        atualizarHorasInput();
+      }
+    }
+
+    // Atualiza campo horasInput somando todas as horas do médico selecionado na aba plantao
+    function atualizarHorasInput() {
+      const select = document.getElementById("medicoSelect");
+      const nomeSelecionado = select.value;
+      if (!nomeSelecionado) {
+        document.getElementById("horasInput").value = "";
+        return;
+      }
+
+      // Somar todas as horas HS do médico na plantoesData
+      let somaHoras = 0;
+      plantoesData.forEach(item => {
+        if (item["QUEM REALIZOU"].trim() === nomeSelecionado) {
+          somaHoras += converterTempoDecimal(item.HS || "00:00:00");
+        }
+      });
+
+      // Mostra o valor decimal no input (ex: 3.50 para 3h30min)
+      document.getElementById("horasInput").value = somaHoras.toFixed(2);
+    }
+
+    // Salva o valor de horas editado pelo usuário, distribuindo proporcionalmente nos registros do médico na aba plantao
+    function salvarHoras() {
+      const select = document.getElementById("medicoSelect");
+      const nomeSelecionado = select.value;
+      let novoValor = parseFloat(document.getElementById("horasInput").value);
+
+      if (isNaN(novoValor) || novoValor < 0) {
+        alert("Por favor, informe um valor válido para as horas.");
+        return;
+      }
+      if (!nomeSelecionado) {
+        alert("Selecione um médico.");
+        return;
+      }
+
+      // Coletar todos os índices dos registros desse médico
+      const indicesMedico = [];
+      plantoesData.forEach((item, idx) => {
+        if (item["QUEM REALIZOU"].trim() === nomeSelecionado) {
+          indicesMedico.push(idx);
+        }
+      });
+
+      if (indicesMedico.length === 0) {
+        alert("Nenhum registro encontrado para este médico.");
+        return;
+      }
+
+      // Soma atual das horas HS dos registros
+      let somaAtual = 0;
+      indicesMedico.forEach(i => {
+        somaAtual += converterTempoDecimal(plantoesData[i].HS || "00:00:00");
+      });
+
+      if (somaAtual === 0) {
+        // Se soma atual for zero, distribuir horas iguais para cada registro
+        const horasPorRegistro = novoValor / indicesMedico.length;
+        indicesMedico.forEach(i => {
+          plantoesData[i].HS = converterDecimalParaHHMMSS(horasPorRegistro);
+        });
+      } else {
+        // Proporcionalmente distribuir novoValor de horas entre os registros
+        indicesMedico.forEach(i => {
+          const horasAntigas = converterTempoDecimal(plantoesData[i].HS || "00:00:00");
+          const proporcao = horasAntigas / somaAtual;
+          const horasNovas = novoValor * proporcao;
+          plantoesData[i].HS = converterDecimalParaHHMMSS(horasNovas);
+        });
+      }
+
+      // Atualiza as tabelas
+      renderPlantoes(plantoesData);
+      renderTable(jsonData);
+
+      alert(`Horas atualizadas para o médico ${nomeSelecionado} no resumo plantão.`);
+    }
+
+    // Filtro simples para a tabela TED + Mutirão (filtra por nome)
     function filterTable() {
       const query = document.getElementById("searchInput").value.toLowerCase();
       const filtered = jsonData.filter(entry => entry.Nome?.toLowerCase().includes(query));
       renderTable(filtered);
     }
 
+    // Reseta filtro
     function resetTable() {
-      renderTable(jsonData);
       document.getElementById("searchInput").value = "";
-    }
-
-    // Preenche o select com os nomes dos médicos
-    function preencherSelectMedicos() {
-      const select = document.getElementById("medicoSelect");
-      select.innerHTML = "";
-
-      jsonData.forEach((medico, i) => {
-        if (medico.Nome && medico.Nome.toLowerCase() !== "médico" && medico.Nome.toLowerCase() !== "valor total") {
-          const option = document.createElement("option");
-          option.value = i;
-          option.textContent = medico.Nome;
-          select.appendChild(option);
-        }
-      });
-
-      // Atualiza input de horas ao mudar seleção
-      select.addEventListener("change", () => {
-        const idx = select.value;
-        if (jsonData[idx]) {
-          document.getElementById("horasInput").value = jsonData[idx]["Horas Neuro"] || 0;
-        }
-      });
-
-      // Inicializa com o primeiro médico selecionado
-      if (select.options.length > 0) {
-        select.selectedIndex = 0;
-        const idx = select.value;
-        document.getElementById("horasInput").value = jsonData[idx]["Horas Neuro"] || 0;
-      }
-    }
-
-    // Salva novo valor de Horas Neuro e atualiza tabela
-    function salvarHoras() {
-      const select = document.getElementById("medicoSelect");
-      const idx = select.value;
-      const novoValor = parseFloat(document.getElementById("horasInput").value);
-
-      if (isNaN(novoValor) || novoValor < 0) {
-        alert("Por favor, informe um valor válido para as horas.");
-        return;
-      }
-
-      jsonData[idx]["Horas Neuro"] = novoValor;
-
       renderTable(jsonData);
-      alert(`Horas Neuro atualizadas para ${jsonData[idx].Nome}: ${novoValor}`);
     }
 
     // Alterna abas
     function showTab(tabName) {
       const tabs = ["ted", "plantao"];
       tabs.forEach(name => {
-        document.getElementById("tabContent-" + name).style.display = name === tabName ? "block" : "none";
+        document.getElementById("tabContent-" + name).style.display = (name === tabName) ? "block" : "none";
         document.getElementById("tab-" + name).classList.toggle("active", name === tabName);
       });
     }
