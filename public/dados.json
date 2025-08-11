@@ -351,7 +351,159 @@
       "Horas Neuro": 0
     }
   ],
-  
+  "Mutirao": [
+    {
+      "Mutirão": 8375
+    },
+    {
+      "Mutirão": 4375
+    },
+    {
+      "Mutirão": 4250
+    },
+    {
+      "Mutirão": 10500
+    },
+    {
+      "Mutirão": 14625
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 5750
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 4750
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 10125
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 6250
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 4250
+    },
+    {
+      "Mutirão": 5750
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 5250
+    },
+    {
+      "Mutirão": 8250
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 5250
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 14750
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 6500
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    }
+  ],
+  "Plantoes_resumo": [
+    {
+      "Nome do Médico": "GIOVANNA LUIZA CAXEIRO ",
+      "Total de Horas": 78.06666666666666
+    },
+    {
+      "Nome do Médico": "VICTORIA JARDIM KOURY LOPES ",
+      "Total de Horas": 33.75
+    }
+  ],
   "Resumo_Plantao_HOSP_NCR_PLANT": [
     {
       "DATA": "2025-06-16 00:00:00",
