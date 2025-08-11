@@ -93,7 +93,7 @@
 
   <div class="tabs">
     <div class="tab active" id="tab-ted" onclick="showTab('ted')">Dados TED + Mutirão</div>
-    <div class="tab" id="tab-plantao" onclick="showTab('plantao')">resumo_plantao_HOSP_NCR - PLANT</div>
+    <div class="tab" id="tab-plantao" onclick="showTab('plantao')">Resumo Plantão HOSP NCR - PLANT</div>
   </div>
 
   <div id="tabContent-ted" class="tab-content">
@@ -139,22 +139,26 @@
     let jsonData = [];
     let originalData = [];
     let mutiraoData = [];
-    let resumoPlantaoData = [];
+    let plantoesData = [];
 
     async function loadData() {
       try {
+        // Troque o caminho abaixo pelo seu arquivo JSON real
         const response = await fetch("dados.json");
         const data = await response.json();
 
         jsonData = data.TED_teste || [];
         mutiraoData = data.Mutirao || [];
-        resumoPlantaoData = data.resumo_plantao_HOSP_NCR_PLANT || [];
+
+        // Corrigido: Usar o nome correto para os plantões da aba "Resumo_Plantao_HOSP_NCR_PLANT"
+        plantoesData = data.Resumo_Plantao_HOSP_NCR_PLANT || [];
 
         originalData = JSON.parse(JSON.stringify(jsonData));
 
         renderTable(jsonData);
-        renderResumoPlantao(resumoPlantaoData);
+        renderPlantoes(plantoesData);
 
+        // Colocar o JSON TED na área de edição para edição manual
         document.getElementById("editArea").value = JSON.stringify(jsonData, null, 2);
       } catch (error) {
         console.error("Erro ao carregar JSON:", error);
@@ -165,33 +169,49 @@
     function renderTable(data) {
       const tbody = document.getElementById("tableBody");
       tbody.innerHTML = "";
+
       data.forEach((entry, index) => {
-        if (!entry.Nome || entry.Nome === "Valor Total") return;
-        const mutirao = mutiraoData[index]?.Mutirão || 0;
-        const horasNeuro = entry["Horas Neuro"] || 0;
+        // Pular linhas inválidas ou resumo, como "Valor Total"
+        if (!entry.Nome || entry.Nome.toLowerCase().includes("valor total") || entry.Nome.toLowerCase().includes("médico")) return;
+
+        // Usar mutirão do índice correto, se existir; senão 0
+        const mutirao = mutiraoData[index]?.Mutirão ?? 0;
+
+        // Formatar valores numéricos com duas casas decimais onde faz sentido
+        const valorElet = Number(entry["Valor ELET"]) || 0;
+        const valorAmb = Number(entry["Valor Amb"]) || 0;
+        const horasNeuro = Number(entry["Horas Neuro"]) || 0;
+
         const row = `<tr>
-          <td>${entry.Nome || ""}</td>
-          <td>${entry.CRM || ""}</td>
-          <td>${entry["Valor ELET"] || 0}</td>
-          <td>${(entry["Valor Amb"] || 0).toFixed(2)}</td>
-          <td>${mutirao}</td>
-          <td>${horasNeuro}</td>
+          <td>${entry.Nome}</td>
+          <td>${entry.CRM}</td>
+          <td>${valorElet.toLocaleString('pt-BR')}</td>
+          <td>${valorAmb.toFixed(2)}</td>
+          <td>${mutirao.toLocaleString('pt-BR')}</td>
+          <td>${horasNeuro.toFixed(2)}</td>
         </tr>`;
         tbody.insertAdjacentHTML("beforeend", row);
       });
     }
 
-    function renderResumoPlantao(data) {
+    function renderPlantoes(data) {
       const tbody = document.getElementById("plantoesBody");
       tbody.innerHTML = "";
+
       data.forEach(entry => {
+        // Formatar data para mostrar só data (sem hora) — opcional
+        let dataFormatada = entry.DATA;
+        if(dataFormatada) {
+          dataFormatada = dataFormatada.split(' ')[0]; // só a parte da data
+        }
+
         const row = `<tr>
-          <td>${entry.DATA || ""}</td>
+          <td>${dataFormatada || ""}</td>
           <td>${entry.PER || ""}</td>
           <td>${entry.DS || ""}</td>
           <td>${entry["QUEM REALIZOU"] || ""}</td>
           <td>${entry.CRM || ""}</td>
-          <td>${entry.FUNÇÃO || ""}</td>
+          <td>${entry.FUNCÃO || ""}</td>
           <td>${entry.ESPECIALIDADE || ""}</td>
           <td>${entry.ENTRADA || ""}</td>
           <td>${entry.SAIDA || ""}</td>
@@ -210,8 +230,8 @@
     }
 
     function resetTable() {
-      renderTable(jsonData);
       document.getElementById("searchInput").value = "";
+      renderTable(jsonData);
     }
 
     function applyEdits() {
@@ -231,15 +251,12 @@
       let y = 10;
       doc.text("Relatório TED - Dados Alterados", 10, y);
       y += 10;
-      jsonData.forEach((entry, index) => {
-        if (!entry.Nome || entry.Nome === "Valor Total") return;
-        const mutirao = mutiraoData[index]?.Mutirão || 0;
-        const horasNeuro = entry["Horas Neuro"] || 0;
-        doc.text(
-          `Nome: ${entry.Nome}, CRM: ${entry.CRM}, ELET: ${entry["Valor ELET"]}, AMB: ${(entry["Valor Amb"] || 0).toFixed(2)}, Mutirão: ${mutirao}, Horas Neuro: ${horasNeuro}`,
-          10,
-          y
-        );
+      jsonData.forEach(entry => {
+        if (!entry.Nome || entry.Nome.toLowerCase().includes("valor total") || entry.Nome.toLowerCase().includes("médico")) return;
+        const mutirao = mutiraoData.find((m, i) => i === jsonData.indexOf(entry))?.Mutirão || 0;
+        const horasNeuro = Number(entry["Horas Neuro"]) || 0;
+        const linha = `Nome: ${entry.Nome}, CRM: ${entry.CRM}, ELET: ${entry["Valor ELET"]}, AMB: ${(entry["Valor Amb"] || 0).toFixed(2)}, Mutirão: ${mutirao}, Horas Neuro: ${horasNeuro.toFixed(2)}`;
+        doc.text(linha, 10, y);
         y += 8;
         if (y > 270) {
           doc.addPage();
@@ -252,7 +269,7 @@
     function showTab(tabName) {
       const tabs = ["ted", "plantao"];
       tabs.forEach(name => {
-        document.getElementById("tabContent-" + name).style.display = name === tabName ? "block" : "none";
+        document.getElementById("tabContent-" + name).style.display = (name === tabName) ? "block" : "none";
         document.getElementById("tab-" + name).classList.toggle("active", name === tabName);
       });
     }
