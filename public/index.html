@@ -72,6 +72,7 @@
         <th>Valor ELET</th>
         <th>Valor Amb</th>
         <th>Mutirão</th>
+        <th>Horas Neuro</th>  <!-- Coluna adicionada -->
       </tr>
     </thead>
     <tbody id="tableBody"></tbody>
@@ -122,12 +123,14 @@
       data.forEach((entry, index) => {
         if (!entry.Nome || entry.Nome === "Valor Total") return;
         const mutirao = mutiraoData[index]?.Mutirão || 0;
+        const horasNeuro = entry["Horas Neuro"] || 0;  // Novo campo adicionado
         const row = `<tr>
           <td>${entry.Nome || ""}</td>
           <td>${entry.CRM || ""}</td>
           <td>${entry["Valor ELET"] || 0}</td>
           <td>${(entry["Valor Amb"] || 0).toFixed(2)}</td>
           <td>${mutirao}</td>
+          <td>${horasNeuro}</td>
         </tr>`;
         tbody.insertAdjacentHTML("beforeend", row);
       });
@@ -176,7 +179,8 @@
       jsonData.forEach((entry, index) => {
         if (!entry.Nome || entry.Nome === "Valor Total") return;
         const mutirao = mutiraoData[index]?.Mutirão || 0;
-        doc.text(`Nome: ${entry.Nome}, CRM: ${entry.CRM}, ELET: ${entry["Valor ELET"]}, AMB: ${(entry["Valor Amb"] || 0).toFixed(2)}, Mutirão: ${mutirao}`, 10, y);
+        const horasNeuro = entry["Horas Neuro"] || 0;
+        doc.text(`Nome: ${entry.Nome}, CRM: ${entry.CRM}, ELET: ${entry["Valor ELET"]}, AMB: ${(entry["Valor Amb"] || 0).toFixed(2)}, Mutirão: ${mutirao}, Horas Neuro: ${horasNeuro}`, 10, y);
         y += 8;
         if (y > 270) {
           doc.addPage();
