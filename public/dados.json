@@ -337,16 +337,162 @@
       "Horas Neuro": 127.8
     },
     {
-      "Nome": "Victor Pereira Fonseca",
-      "CRM": 217679,
-      "Valor ELET": 2250,
+      "Nome": "Wellington Forte Alves Junior",
+      "CRM": 202341,
+      "Valor ELET": 6500,
       "Valor Amb": 0.0,
+      "Horas Neuro": 0
+    },
+    {
+      "Nome": "William Guidini Lima",
+      "CRM": 160514,
+      "Valor ELET": 8750,
+      "Valor Amb": 279.9999884520213,
       "Horas Neuro": 0
     }
   ],
   "Mutirao": [
-    { "Mutirão": 8375 },
-    { "Mutirão": 4375 }
+    {
+      "Mutirão": 8375
+    },
+    {
+      "Mutirão": 4375
+    },
+    {
+      "Mutirão": 4250
+    },
+    {
+      "Mutirão": 10500
+    },
+    {
+      "Mutirão": 14625
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 5750
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 4750
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 10125
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 6250
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 4250
+    },
+    {
+      "Mutirão": 5750
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 5250
+    },
+    {
+      "Mutirão": 8250
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 5250
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 14750
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 6500
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    },
+    {
+      "Mutirão": 0
+    }
   ],
   "Plantoes_resumo": [
     {
@@ -357,89 +503,6 @@
       "Nome do Médico": "VICTORIA JARDIM KOURY LOPES ",
       "Total de Horas": 33.75
     }
-  ],
-  "resumo_plantao_HOSP_NCR - PLANT": [
-    {
-      "DATA": "2025-06-16",
-      "PER": "diurno",
-      "DS": "seg",
-      "QUEM REALIZOU": "ANA CAROLINA ROSSI ORTEGA DA SILVEIRA",
-      "CRM": 142039,
-      "FUNÇÃO": "PLANTONISTA",
-      "ESPECIALIDADE": "NEUROCIRURGIA",
-      "ENTRADA": "07:11",
-      "SAIDA": "19:21",
-      "HS": "12:10:00",
-      "VALOR HORA": 204,
-      "VALOR TOTAL R$": 2482
-    },
-    {
-      "DATA": "2025-06-16",
-      "PER": "diurno",
-      "DS": "seg",
-      "QUEM REALIZOU": "MAURO SERGIO DOMIENIKAN",
-      "CRM": 100869,
-      "FUNÇÃO": "PLANTONISTA",
-      "ESPECIALIDADE": "NEUROCIRURGIA",
-      "ENTRADA": "08:01",
-      "SAIDA": "19:25",
-      "HS": "11:24:00",
-      "VALOR HORA": 204,
-      "VALOR TOTAL R$": 2325.6
-    },
-    {
-      "DATA": "2025-06-16",
-      "PER": "diurno",
-      "DS": "seg",
-      "QUEM REALIZOU": "ANA CAROLINA ROSSI ORTEGA DA SILVEIRA",
-      "CRM": 142039,
-      "FUNÇÃO": "PLANTONISTA",
-      "ESPECIALIDADE": "NEUROCIRURGIA",
-      "ENTRADA": "07:11",
-      "SAIDA": "19:21",
-      "HS": "12:10:00",
-      "VALOR HORA": 204,
-      "VALOR TOTAL R$": 2482
-    },
-    {
-      "DATA": "2025-06-16",
-      "PER": "diurno",
-      "DS": "seg",
-      "QUEM REALIZOU": "MAURO SERGIO DOMIENIKAN",
-      "CRM": 100869,
-      "FUNÇÃO": "PLANTONISTA",
-      "ESPECIALIDADE": "NEUROCIRURGIA",
-      "ENTRADA": "08:01",
-      "SAIDA": "19:25",
-      "HS": "11:24:00",
-      "VALOR HORA": 204,
-      "VALOR TOTAL R$": 2325.6
-    },
-    {
-      "DATA": "2025-06-17",
-      "PER": "diurno",
-      "DS": "ter",
-      "QUEM REALIZOU": "MAURO SERGIO DOMIENIKAN",
-      "CRM": 100869,
-      "FUNÇÃO": "PLANTONISTA",
-      "ESPECIALIDADE": "NEUROCIRURGIA",
-      "ENTRADA": "07:01",
-      "SAIDA": "19:01",
-      "HS": "12:00:00",
-      "VALOR HORA": 204,
-      "VALOR TOTAL R$": 2448
-    },
-    {
-      "DATA": "2025-06-17",
-      "PER": "diurno",
-      "DS": "ter",
-      "QUEM REALIZOU": "ANA CAROLINA ROSSI ORTEGA DA SILVEIRA",
-      "CRM": 142039,
-      "FUNÇÃO": "PLANTONISTA",
-      "ESPECIALIDADE": "NEUROCIRURGIA",
-      "ENTRADA": "07:11",
-      "SAIDA": "19:01",
-      "HS": "11:50:00",
-      "VALOR HORA": 204,
-      "VALOR TOTAL R$": 2412
-    }]
+  ]
+}
+
