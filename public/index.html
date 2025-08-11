@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Visualizador de Dados TED</title>
   <style>
     body {
@@ -22,6 +22,7 @@
       width: 100%;
       border-collapse: collapse;
       background: white;
+      margin-top: 10px;
     }
     th, td {
       border: 1px solid #ccc;
@@ -45,49 +46,93 @@
     h2 {
       margin-top: 40px;
     }
+
+    /* Abas estilo simples */
+    .tabs {
+      display: flex;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    .tab {
+      padding: 10px 20px;
+      background: #ddd;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      border-radius: 10px 10px 0 0;
+      margin-right: 5px;
+      user-select: none;
+    }
+    .tab.active {
+      background: white;
+      font-weight: bold;
+      border-bottom: 1px solid white;
+    }
+    .tab-content {
+      background: white;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 0 10px 10px 10px;
+    }
   </style>
 </head>
 <body>
   <h1>Visualizador TED / Mutirão / Plantões</h1>
 
   <div class="filter-section">
-    <input type="text" id="searchInput" placeholder="Buscar por nome...">
+    <input type="text" id="searchInput" placeholder="Buscar por nome..." />
     <button onclick="filterTable()">Filtrar</button>
     <button onclick="resetTable()">Resetar</button>
   </div>
 
   <div class="edit-section">
     <h3>Editar dados (temporariamente)</h3>
-    <textarea id="editArea" rows="6" style="width:100%"></textarea><br>
+    <textarea id="editArea" rows="6" style="width:100%"></textarea><br />
     <button onclick="applyEdits()">Alterar</button>
     <button onclick="downloadPDF()" class="download-btn">Baixar PDF</button>
   </div>
 
-  <h2>Dados TED + Mutirão</h2>
-  <table id="dataTable">
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>CRM</th>
-        <th>Valor ELET</th>
-        <th>Valor Amb</th>
-        <th>Mutirão</th>
-        <th>Horas Neuro</th>  <!-- Coluna adicionada -->
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+  <div class="tabs">
+    <div class="tab active" id="tab-ted" onclick="showTab('ted')">Dados TED + Mutirão</div>
+    <div class="tab" id="tab-plantao" onclick="showTab('plantao')">resumo_plantao_HOSP_NCR - PLANT</div>
+  </div>
 
-  <h2>Resumo Plantões</h2>
-  <table id="plantoesTable">
-    <thead>
-      <tr>
-        <th>Nome do Médico</th>
-        <th>Total de Horas</th>
-      </tr>
-    </thead>
-    <tbody id="plantoesBody"></tbody>
-  </table>
+  <div id="tabContent-ted" class="tab-content">
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>CRM</th>
+          <th>Valor ELET</th>
+          <th>Valor Amb</th>
+          <th>Mutirão</th>
+          <th>Horas Neuro</th> <!-- Coluna adicionada -->
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="tabContent-plantao" class="tab-content" style="display:none;">
+    <table id="plantoesTable">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Per</th>
+          <th>DS</th>
+          <th>Quem Realizou</th>
+          <th>CRM</th>
+          <th>Função</th>
+          <th>Especialidade</th>
+          <th>Entrada</th>
+          <th>Saída</th>
+          <th>Horas</th>
+          <th>Valor Hora</th>
+          <th>Valor Total R$</th>
+        </tr>
+      </thead>
+      <tbody id="plantoesBody"></tbody>
+    </table>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
@@ -123,7 +168,7 @@
       data.forEach((entry, index) => {
         if (!entry.Nome || entry.Nome === "Valor Total") return;
         const mutirao = mutiraoData[index]?.Mutirão || 0;
-        const horasNeuro = entry["Horas Neuro"] || 0;  // Novo campo adicionado
+        const horasNeuro = entry["Horas Neuro"] || 0; // Novo campo adicionado
         const row = `<tr>
           <td>${entry.Nome || ""}</td>
           <td>${entry.CRM || ""}</td>
@@ -141,8 +186,18 @@
       tbody.innerHTML = "";
       data.forEach(entry => {
         const row = `<tr>
-          <td>${entry["Nome do Médico"] || ""}</td>
-          <td>${(entry["Total de Horas"] || 0).toFixed(2)}</td>
+          <td>${entry.DATA || ""}</td>
+          <td>${entry.PER || ""}</td>
+          <td>${entry.DS || ""}</td>
+          <td>${entry["QUEM REALIZOU"] || ""}</td>
+          <td>${entry.CRM || ""}</td>
+          <td>${entry.FUNCÃO || ""}</td>
+          <td>${entry.ESPECIALIDADE || ""}</td>
+          <td>${entry.ENTRADA || ""}</td>
+          <td>${entry.SAIDA || ""}</td>
+          <td>${entry.HS || ""}</td>
+          <td>${entry["VALOR HORA"] || ""}</td>
+          <td>${entry["VALOR TOTAL R$"] || ""}</td>
         </tr>`;
         tbody.insertAdjacentHTML("beforeend", row);
       });
@@ -150,6 +205,7 @@
 
     function filterTable() {
       const query = document.getElementById("searchInput").value.toLowerCase();
+      // Filtrar apenas na aba TED, por simplicidade
       const filtered = jsonData.filter(entry => entry.Nome?.toLowerCase().includes(query));
       renderTable(filtered);
     }
@@ -180,7 +236,11 @@
         if (!entry.Nome || entry.Nome === "Valor Total") return;
         const mutirao = mutiraoData[index]?.Mutirão || 0;
         const horasNeuro = entry["Horas Neuro"] || 0;
-        doc.text(`Nome: ${entry.Nome}, CRM: ${entry.CRM}, ELET: ${entry["Valor ELET"]}, AMB: ${(entry["Valor Amb"] || 0).toFixed(2)}, Mutirão: ${mutirao}, Horas Neuro: ${horasNeuro}`, 10, y);
+        doc.text(
+          `Nome: ${entry.Nome}, CRM: ${entry.CRM}, ELET: ${entry["Valor ELET"]}, AMB: ${(entry["Valor Amb"] || 0).toFixed(2)}, Mutirão: ${mutirao}, Horas Neuro: ${horasNeuro}`,
+          10,
+          y
+        );
         y += 8;
         if (y > 270) {
           doc.addPage();
@@ -188,6 +248,15 @@
         }
       });
       doc.save("relatorio_ted_alterado.pdf");
+    }
+
+    // Função para alternar abas
+    function showTab(tabName) {
+      const tabs = ["ted", "plantao"];
+      tabs.forEach(name => {
+        document.getElementById("tabContent-" + name).style.display = name === tabName ? "block" : "none";
+        document.getElementById("tab-" + name).classList.toggle("active", name === tabName);
+      });
     }
 
     document.addEventListener("DOMContentLoaded", loadData);
