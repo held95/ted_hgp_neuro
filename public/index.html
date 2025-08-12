@@ -93,6 +93,18 @@
     #plantoesBody tr.selected {
       background-color: #a3d5ff;
     }
+
+    /* Estilo para inputs de data no filtro plantão */
+    .date-filters {
+      margin-bottom: 15px;
+    }
+    .date-filters label {
+      margin-right: 5px;
+    }
+    .date-filters input {
+      margin-right: 15px;
+      max-width: 150px;
+    }
   </style>
 </head>
 <body>
@@ -100,8 +112,8 @@
 
   <div class="filter-section">
     <input type="text" id="searchInput" placeholder="Buscar por nome..." />
-    <button onclick="filterTable()">Filtrar</button>
-    <button onclick="resetTable()">Resetar</button>
+    <button onclick="filtrarTudo()">Filtrar</button>
+    <button onclick="resetarTudo()">Resetar</button>
   </div>
 
   <div class="edit-section">
@@ -134,6 +146,14 @@
   </div>
 
   <div id="tabContent-plantao" class="tab-content" style="display:none;">
+    <!-- NOVOS FILTROS DE DATA -->
+    <div class="date-filters">
+      <label for="dataInicio">Data Início:</label>
+      <input type="date" id="dataInicio" />
+      <label for="dataFim">Data Fim:</label>
+      <input type="date" id="dataFim" />
+    </div>
+
     <table id="plantoesTable">
       <thead>
         <tr>
@@ -219,6 +239,7 @@
     }
 
     // Renderiza tabela resumo_plantao (plantoesData)
+    // Modificada para aceitar dados filtrados
     function renderPlantoes(data) {
       const tbody = document.getElementById("plantoesBody");
       tbody.innerHTML = "";
@@ -350,17 +371,70 @@
       renderTable(jsonData);
     }
 
-    // Filtro simples para a tabela TED + Mutirão (filtra por nome)
-    function filterTable() {
-      const query = document.getElementById("searchInput").value.toLowerCase();
-      const filtered = jsonData.filter(entry => entry.Nome?.toLowerCase().includes(query));
-      renderTable(filtered);
+    // NOVA função que filtra ambas as tabelas conforme os inputs:
+    function filtrarTudo() {
+      const nomeFiltro = document.getElementById("searchInput").value.toLowerCase().trim();
+      const dataInicioStr = document.getElementById("dataInicio").value;
+      const dataFimStr = document.getElementById("dataFim").value;
+
+      // Filtra TED + Mutirão por nome (igual antes)
+      const filteredTED = jsonData.filter(entry =>
+        entry.Nome?.toLowerCase().includes(nomeFiltro)
+      );
+
+      // Filtra resumo plantão por nome e data
+      const filteredPlantoes = plantoesData.filter(item => {
+        const nomePlantao = item["QUEM REALIZOU"]?.toLowerCase() || "";
+        const incluiNome = nomePlantao.includes(nomeFiltro);
+
+        if (!incluiNome) return false;
+
+        // Se não tem data, inclui
+        if (!item.DATA) return true;
+
+        const dataPlantao = new Date(item.DATA);
+        // Se campo data inválida, inclui
+        if (isNaN(dataPlantao.getTime())) return true;
+
+        // Se não tem filtro de datas, inclui tudo
+        if (!dataInicioStr && !dataFimStr) return true;
+
+        // Se tem filtro inicio e fim, checa intervalo
+        if (dataInicioStr && dataFimStr) {
+          const dataInicio = new Date(dataInicioStr);
+          const dataFim = new Date(dataFimStr);
+          // Ajusta dataFim para considerar o dia todo (23:59:59)
+          dataFim.setHours(23,59,59,999);
+          return dataPlantao >= dataInicio && dataPlantao <= dataFim;
+        }
+
+        // Se só tem dataInicio
+        if (dataInicioStr) {
+          const dataInicio = new Date(dataInicioStr);
+          return dataPlantao >= dataInicio;
+        }
+
+        // Se só tem dataFim
+        if (dataFimStr) {
+          const dataFim = new Date(dataFimStr);
+          dataFim.setHours(23,59,59,999);
+          return dataPlantao <= dataFim;
+        }
+
+        return true;
+      });
+
+      renderTable(filteredTED);
+      renderPlantoes(filteredPlantoes);
     }
 
-    // Reseta filtro
-    function resetTable() {
+    // Resetar filtro e inputs
+    function resetarTudo() {
       document.getElementById("searchInput").value = "";
+      document.getElementById("dataInicio").value = "";
+      document.getElementById("dataFim").value = "";
       renderTable(jsonData);
+      renderPlantoes(plantoesData);
     }
 
     // Alterna abas
