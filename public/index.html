@@ -198,6 +198,8 @@
       data.forEach((entry, index) => {
         if (!entry.Nome || entry.Nome.toLowerCase() === "valor total" || entry.Nome.toLowerCase() === "médico") return;
         const mutirao = mutiraoData[index]?.Mutirão || 0;
+        const valorElet = entry["Valor ELET"] || 0;
+        const valorAmb = entry["Valor Amb"] || 0;
         const nomeKey = entry.Nome.trim().toLowerCase();
         const horasNeuro = somaHorasPorMedico[nomeKey] || 0;
 
@@ -207,8 +209,8 @@
         const row = `<tr>
           <td>${entry.Nome || ""}</td>
           <td>${entry.CRM || ""}</td>
-          <td>${entry["Valor ELET"] || 0}</td>
-          <td>${(entry["Valor Amb"] || 0).toFixed(2)}</td>
+          <td>${valorElet}</td>
+          <td>${valorAmb.toFixed(2)}</td>
           <td>${mutirao}</td>
           <td>${horasNeuro.toFixed(2)}</td>
         </tr>`;
@@ -281,7 +283,12 @@
 
     // Função que salva o valor de horas para todas as linhas selecionadas
     function salvarHoras() {
-      const valorInput = parseFloat(document.getElementById("horasInput").value);
+      let valorStr = document.getElementById("horasInput").value.trim();
+
+      // Troca vírgula por ponto pra aceitar decimal no padrão JavaScript
+      valorStr = valorStr.replace(",", ".");
+
+      const valorInput = parseFloat(valorStr);
       if (isNaN(valorInput) || valorInput < 0) {
         alert("Por favor, informe um valor válido para as horas.");
         return;
