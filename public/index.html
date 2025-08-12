@@ -297,6 +297,7 @@
       return `${pad(h)}:${pad(m)}:${pad(s)}`;
     }
 
+    // Correção na função salvarHoras para atualizar todas as ocorrências selecionadas, mesmo após filtro
     function salvarHoras() {
       let valorStr = document.getElementById("horasInput").value.trim();
       valorStr = valorStr.replace(",", ".");
@@ -313,10 +314,10 @@
 
       linhasSelecionadas.forEach(linha => {
         const crm = linha.cells[4].textContent.trim();
+        const data = linha.cells[0].textContent.trim(); // Data da linha para identificar melhor
         for(let i=0; i < plantoesData.length; i++) {
-          if (String(plantoesData[i].CRM) === crm) {
+          if (String(plantoesData[i].CRM) === crm && plantoesData[i].DATA === data) {
             plantoesData[i].HS = converterDecimalParaHHMMSS(valorInput);
-            break;
           }
         }
       });
@@ -328,10 +329,12 @@
 
     function atualizarHorasNeuro() {
       const somaHorasPorMedico = {};
+
       plantoesData.forEach(item => {
         const nome = item["QUEM REALIZOU"]?.trim().toLowerCase() || "";
         const horasStr = item.HS || "00:00:00";
         const horasDec = converterTempoDecimal(horasStr);
+
         if (!somaHorasPorMedico[nome]) {
           somaHorasPorMedico[nome] = 0;
         }
@@ -347,47 +350,34 @@
     }
 
     function filtrarTudo() {
-      const nomeFiltro = document.getElementById("searchInput").value.toLowerCase().trim();
-      const dataInicioStr = document.getElementById("dataInicio").value;
-      const dataFimStr = document.getElementById("dataFim").value;
+      const nomeQuery = document.getElementById("searchInput").value.toLowerCase();
+      const dataInicio = document.getElementById("dataInicio").value;
+      const dataFim = document.getElementById("dataFim").value;
 
-      const filteredTED = jsonData.filter(entry =>
-        entry.Nome?.toLowerCase().includes(nomeFiltro)
-      );
+      // Filtra TED + Mutirão por nome
+      let filteredTed = jsonData.filter(entry => entry.Nome?.toLowerCase().includes(nomeQuery));
 
-      const filteredPlantoes = plantoesData.filter(item => {
-        const nomePlantao = item["QUEM REALIZOU"]?.toLowerCase() || "";
-        const incluiNome = nomePlantao.includes(nomeFiltro);
+      // Filtra resumo_plantao por nome e por data
+      let filteredPlantoes = plantoesData.filter(entry => {
+        const nome = (entry["QUEM REALIZOU"] || "").toLowerCase();
+        const data = entry.DATA ? entry.DATA.split(" ")[0] : "";
+        let nomeMatch = nome.includes(nomeQuery);
+        let dataMatch = true;
 
-        if (!incluiNome) return false;
-        if (!item.DATA) return true;
-
-        const dataPlantao = new Date(item.DATA);
-        if (isNaN(dataPlantao.getTime())) return true;
-
-        if (!dataInicioStr && !dataFimStr) return true;
-
-        if (dataInicioStr && dataFimStr) {
-          const dataInicio = new Date(dataInicioStr);
-          const dataFim = new Date(dataFimStr);
-          dataFim.setHours(23,59,59,999);
-          return dataPlantao >= dataInicio && dataPlantao <= dataFim;
+        if (dataInicio) {
+          dataMatch = dataMatch && (data >= dataInicio);
         }
-        if (dataInicioStr) {
-          const dataInicio = new Date(dataInicioStr);
-          return dataPlantao >= dataInicio;
+        if (dataFim) {
+          dataMatch = dataMatch && (data <= dataFim);
         }
-        if (dataFimStr) {
-          const dataFim = new Date(dataFimStr);
-          dataFim.setHours(23,59,59,999);
-          return dataPlantao <= dataFim;
-        }
-        return true;
+
+        return nomeMatch && dataMatch;
       });
 
-      renderTable(filteredTED);
+      renderTable(filteredTed);
       renderPlantoes(filteredPlantoes);
 
+      // Atualiza calendário se visível
       if (calendarioVisivel && calendarInstance) {
         calendarInstance.removeAllEvents();
         calendarInstance.addEventSource(mapearEventosPlantao(filteredPlantoes));
@@ -455,9 +445,7 @@
       return data.map(item => {
         if (!item.DATA) return null;
         let start = item.DATA;
-        // Ajuste se o campo DATA for string com hora
         if (typeof start === 'string') {
-          // Apenas data yyyy-mm-dd ou yyyy-mm-dd hh:mm:ss
           start = start.split(" ")[0];
         }
         return {
