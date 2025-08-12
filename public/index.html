@@ -281,7 +281,7 @@
       return `${pad(h)}:${pad(m)}:${pad(s)}`;
     }
 
-    // Função que salva o valor de horas para todas as linhas selecionadas
+    // Função que salva o valor de horas para todas as linhas selecionadas (corrigida para atualizar todos os mesmos médicos)
     function salvarHoras() {
       let valorStr = document.getElementById("horasInput").value.trim();
 
@@ -301,26 +301,28 @@
         return;
       }
 
-      // Atualiza o campo HS (Horas) no plantoesData para as linhas selecionadas
+      // Pega os nomes dos médicos das linhas selecionadas (sem duplicar)
+      const nomesSelecionados = new Set();
       linhasSelecionadas.forEach(linha => {
-        const crm = linha.cells[4].textContent.trim();
-        // Atualiza o dado no plantoesData (busca índice correto)
-        for(let i=0; i < plantoesData.length; i++) {
-          if (String(plantoesData[i].CRM) === crm) {
-            // atualiza o HS com o valor digitado convertido em HH:MM:SS
-            plantoesData[i].HS = converterDecimalParaHHMMSS(valorInput);
-            break;
-          }
+        const nome = linha.cells[3].textContent.trim().toLowerCase(); // "QUEM REALIZOU"
+        nomesSelecionados.add(nome);
+      });
+
+      // Atualiza todas as linhas do plantoesData que correspondem a esses nomes
+      plantoesData.forEach(item => {
+        const nomeItem = item["QUEM REALIZOU"]?.trim().toLowerCase() || "";
+        if (nomesSelecionados.has(nomeItem)) {
+          item.HS = converterDecimalParaHHMMSS(valorInput);
         }
       });
 
-      // Agora atualiza a tabela plantoes
+      // Atualiza a tabela plantoes
       renderPlantoes(plantoesData);
 
       // Atualiza o jsonData (TED + Mutirão) "Horas Neuro" para refletir a soma das horas atualizadas
       atualizarHorasNeuro();
 
-      alert("Horas atualizadas para as linhas selecionadas!");
+      alert("Horas atualizadas para os médicos selecionados!");
     }
 
     // Atualiza o jsonData "Horas Neuro" somando as horas do plantoesData agrupadas por médico
