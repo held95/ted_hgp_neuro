@@ -220,108 +220,67 @@
 
     // Renderiza tabela resumo_plantao (plantoesData)
     function renderPlantoes(data) {
-      const tbody = document.getElementById("plantoesBody");
-      tbody.innerHTML = "";
-      data.forEach((entry, index) => {
-        const row = document.createElement("tr");
+  const tbody = document.getElementById("plantoesBody");
+  tbody.innerHTML = "";
+  data.forEach((entry, index) => {
+    const row = document.createElement("tr");
 
-        row.innerHTML = `
-          <td>${entry.DATA || ""}</td>
-          <td>${entry.PER || ""}</td>
-          <td>${entry.DS || ""}</td>
-          <td>${entry["QUEM REALIZOU"] || ""}</td>
-          <td>${entry.CRM || ""}</td>
-          <td>${entry.FUNCÃO || ""}</td>
-          <td>${entry.ESPECIALIDADE || ""}</td>
-          <td>${entry.ENTRADA || ""}</td>
-          <td>${entry.SAIDA || ""}</td>
-          <td>${entry.HS || ""}</td>
-          <td>${entry["VALOR HORA"] || ""}</td>
-          <td>${entry["VALOR TOTAL R$"] || ""}</td>
-        `;
+    row.setAttribute("data-index", index); // <-- Guarda índice
 
-        // Adiciona listener para seleção múltipla de linhas
-        row.addEventListener("click", function(event) {
-          if(event.ctrlKey || event.metaKey) {
-            // toggle seleção múltipla com Ctrl ou Cmd
-            this.classList.toggle("selected");
-          } else {
-            // sem Ctrl: limpa seleção e seleciona só essa linha
-            clearSelection();
-            this.classList.add("selected");
-          }
-        });
+    row.innerHTML = `
+      <td>${entry.DATA || ""}</td>
+      <td>${entry.PER || ""}</td>
+      <td>${entry.DS || ""}</td>
+      <td>${entry["QUEM REALIZOU"] || ""}</td>
+      <td>${entry.CRM || ""}</td>
+      <td>${entry.FUNCÃO || ""}</td>
+      <td>${entry.ESPECIALIDADE || ""}</td>
+      <td>${entry.ENTRADA || ""}</td>
+      <td>${entry.SAIDA || ""}</td>
+      <td>${entry.HS || ""}</td>
+      <td>${entry["VALOR HORA"] || ""}</td>
+      <td>${entry["VALOR TOTAL R$"] || ""}</td>
+    `;
 
-        tbody.appendChild(row);
-      });
-    }
-
-    function clearSelection() {
-      document.querySelectorAll("#plantoesBody tr.selected").forEach(row => {
-        row.classList.remove("selected");
-      });
-    }
-
-    // Função para converter tempo HH:MM:SS em número decimal de horas
-    function converterTempoDecimal(hhmmss) {
-      const partes = hhmmss.split(":");
-      if (partes.length !== 3) return 0;
-      const h = parseInt(partes[0], 10) || 0;
-      const m = parseInt(partes[1], 10) || 0;
-      const s = parseInt(partes[2], 10) || 0;
-      return h + m / 60 + s / 3600;
-    }
-
-    // Função para converter decimal em HH:MM:SS para mostrar no campo de horas no resumo plantão
-    function converterDecimalParaHHMMSS(decimalHours) {
-      const h = Math.floor(decimalHours);
-      const m = Math.floor((decimalHours - h) * 60);
-      const s = Math.round(((decimalHours - h) * 60 - m) * 60);
-      const pad = n => String(n).padStart(2, '0');
-      return `${pad(h)}:${pad(m)}:${pad(s)}`;
-    }
-
-    // Função que salva o valor de horas para todas as linhas selecionadas
-    function salvarHoras() {
-      let valorStr = document.getElementById("horasInput").value.trim();
-
-      // Troca vírgula por ponto pra aceitar decimal no padrão JavaScript
-      valorStr = valorStr.replace(",", ".");
-
-      const valorInput = parseFloat(valorStr);
-      if (isNaN(valorInput) || valorInput < 0) {
-        alert("Por favor, informe um valor válido para as horas.");
-        return;
+    row.addEventListener("click", function(event) {
+      if(event.ctrlKey || event.metaKey) {
+        this.classList.toggle("selected");
+      } else {
+        clearSelection();
+        this.classList.add("selected");
       }
+    });
 
-      // Pega todas as linhas selecionadas
-      const linhasSelecionadas = document.querySelectorAll("#plantoesBody tr.selected");
-      if (linhasSelecionadas.length === 0) {
-        alert("Selecione pelo menos uma linha para alterar.");
-        return;
-      }
+    tbody.appendChild(row);
+  });
+}
 
-      // Atualiza o campo HS (Horas) no plantoesData para as linhas selecionadas
-      linhasSelecionadas.forEach(linha => {
-        const crm = linha.cells[4].textContent.trim();
-        // Atualiza o dado no plantoesData (busca índice correto)
-        for(let i=0; i < plantoesData.length; i++) {
-          if (String(plantoesData[i].CRM) === crm) {
-            // atualiza o HS com o valor digitado convertido em HH:MM:SS
-            plantoesData[i].HS = converterDecimalParaHHMMSS(valorInput);
-            break;
-          }
-        }
-      });
+function salvarHoras() {
+  let valorStr = document.getElementById("horasInput").value.trim();
+  valorStr = valorStr.replace(",", ".");
+  const valorInput = parseFloat(valorStr);
+  if (isNaN(valorInput) || valorInput < 0) {
+    alert("Por favor, informe um valor válido para as horas.");
+    return;
+  }
 
-      // Agora atualiza a tabela plantoes
-      renderPlantoes(plantoesData);
+  const linhasSelecionadas = document.querySelectorAll("#plantoesBody tr.selected");
+  if (linhasSelecionadas.length === 0) {
+    alert("Selecione pelo menos uma linha para alterar.");
+    return;
+  }
 
-      // Atualiza o jsonData (TED + Mutirão) "Horas Neuro" para refletir a soma das horas atualizadas
-      atualizarHorasNeuro();
-
-      alert("Horas atualizadas para as linhas selecionadas!");
+  linhasSelecionadas.forEach(linha => {
+    const idx = parseInt(linha.getAttribute("data-index"), 10);
+    if (!isNaN(idx)) {
+      plantoesData[idx].HS = converterDecimalParaHHMMSS(valorInput);
     }
+  });
+
+  renderPlantoes(plantoesData);
+  atualizarHorasNeuro();
+  alert("Horas atualizadas para as linhas selecionadas!");
+}
 
     // Atualiza o jsonData "Horas Neuro" somando as horas do plantoesData agrupadas por médico
     function atualizarHorasNeuro() {
