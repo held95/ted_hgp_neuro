@@ -14,7 +14,7 @@
     }
     input, select, button {
       padding: 8px;
-      margin: 5px 0;
+      margin: 5px 5px 5px 0;
       border-radius: 5px;
       border: 1px solid #ccc;
       font-size: 16px;
@@ -93,25 +93,21 @@
     #plantoesBody tr.selected {
       background-color: #a3d5ff;
     }
-
-    /* Estilo para inputs de data no filtro plantão */
-    .date-filters {
-      margin-bottom: 15px;
-    }
-    .date-filters label {
-      margin-right: 5px;
-    }
-    .date-filters input {
-      margin-right: 15px;
-      max-width: 150px;
-    }
   </style>
+
+  <!-- FullCalendar CSS & JS -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.js"></script>
 </head>
 <body>
   <h1>Visualizador TED / Mutirão / Plantões</h1>
 
   <div class="filter-section">
     <input type="text" id="searchInput" placeholder="Buscar por nome..." />
+    <label for="dataInicio">Data Início (Plantão):</label>
+    <input type="date" id="dataInicio" />
+    <label for="dataFim">Data Fim (Plantão):</label>
+    <input type="date" id="dataFim" />
     <button onclick="filtrarTudo()">Filtrar</button>
     <button onclick="resetarTudo()">Resetar</button>
   </div>
@@ -146,14 +142,9 @@
   </div>
 
   <div id="tabContent-plantao" class="tab-content" style="display:none;">
-    <!-- NOVOS FILTROS DE DATA -->
-    <div class="date-filters">
-      <label for="dataInicio">Data Início:</label>
-      <input type="date" id="dataInicio" />
-      <label for="dataFim">Data Fim:</label>
-      <input type="date" id="dataFim" />
+    <div style="margin-bottom:10px;">
+      <button id="toggleCalendarBtn" onclick="toggleCalendario()">Alternar para Calendário</button>
     </div>
-
     <table id="plantoesTable">
       <thead>
         <tr>
@@ -173,12 +164,17 @@
       </thead>
       <tbody id="plantoesBody"></tbody>
     </table>
+
+    <div id="calendar" style="display:none; max-width: 900px; margin-top: 20px;"></div>
   </div>
 
   <script>
     let jsonData = [];           // TED + Mutirão
     let mutiraoData = [];
     let plantoesData = [];       // Resumo_Plantao_HOSP_NCR_PLANT
+
+    let calendarioVisivel = false;
+    let calendarInstance = null;
 
     async function loadData() {
       try {
@@ -199,7 +195,6 @@
 
     // Renderiza a tabela TED + Mutirão, atualizando "Horas Neuro" com soma de horas da aba plantao
     function renderTable(data) {
-      // Cria um mapa para somar horas do resumo_plantao por médico
       const somaHorasPorMedico = {};
 
       plantoesData.forEach(item => {
@@ -223,7 +218,6 @@
         const nomeKey = entry.Nome.trim().toLowerCase();
         const horasNeuro = somaHorasPorMedico[nomeKey] || 0;
 
-        // Atualiza também no jsonData (em memória)
         jsonData[index]["Horas Neuro"] = horasNeuro;
 
         const row = `<tr>
@@ -239,7 +233,6 @@
     }
 
     // Renderiza tabela resumo_plantao (plantoesData)
-    // Modificada para aceitar dados filtrados
     function renderPlantoes(data) {
       const tbody = document.getElementById("plantoesBody");
       tbody.innerHTML = "";
@@ -261,13 +254,10 @@
           <td>${entry["VALOR TOTAL R$"] || ""}</td>
         `;
 
-        // Adiciona listener para seleção múltipla de linhas
         row.addEventListener("click", function(event) {
           if(event.ctrlKey || event.metaKey) {
-            // toggle seleção múltipla com Ctrl ou Cmd
             this.classList.toggle("selected");
           } else {
-            // sem Ctrl: limpa seleção e seleciona só essa linha
             clearSelection();
             this.classList.add("selected");
           }
@@ -283,7 +273,6 @@
       });
     }
 
-    // Função para converter tempo HH:MM:SS em número decimal de horas
     function converterTempoDecimal(hhmmss) {
       const partes = hhmmss.split(":");
       if (partes.length !== 3) return 0;
@@ -293,7 +282,6 @@
       return h + m / 60 + s / 3600;
     }
 
-    // Função para converter decimal em HH:MM:SS para mostrar no campo de horas no resumo plantão
     function converterDecimalParaHHMMSS(decimalHours) {
       const h = Math.floor(decimalHours);
       const m = Math.floor((decimalHours - h) * 60);
@@ -302,67 +290,47 @@
       return `${pad(h)}:${pad(m)}:${pad(s)}`;
     }
 
-    // Função que salva o valor de horas para todas as linhas selecionadas (corrigida para atualizar todos os mesmos médicos)
     function salvarHoras() {
       let valorStr = document.getElementById("horasInput").value.trim();
-
-      // Troca vírgula por ponto pra aceitar decimal no padrão JavaScript
       valorStr = valorStr.replace(",", ".");
-
       const valorInput = parseFloat(valorStr);
       if (isNaN(valorInput) || valorInput < 0) {
         alert("Por favor, informe um valor válido para as horas.");
         return;
       }
-
-      // Pega todas as linhas selecionadas
       const linhasSelecionadas = document.querySelectorAll("#plantoesBody tr.selected");
       if (linhasSelecionadas.length === 0) {
         alert("Selecione pelo menos uma linha para alterar.");
         return;
       }
 
-      // Pega os nomes dos médicos das linhas selecionadas (sem duplicar)
-      const nomesSelecionados = new Set();
       linhasSelecionadas.forEach(linha => {
-        const nome = linha.cells[3].textContent.trim().toLowerCase(); // "QUEM REALIZOU"
-        nomesSelecionados.add(nome);
-      });
-
-      // Atualiza todas as linhas do plantoesData que correspondem a esses nomes
-      plantoesData.forEach(item => {
-        const nomeItem = item["QUEM REALIZOU"]?.trim().toLowerCase() || "";
-        if (nomesSelecionados.has(nomeItem)) {
-          item.HS = converterDecimalParaHHMMSS(valorInput);
+        const crm = linha.cells[4].textContent.trim();
+        for(let i=0; i < plantoesData.length; i++) {
+          if (String(plantoesData[i].CRM) === crm) {
+            plantoesData[i].HS = converterDecimalParaHHMMSS(valorInput);
+            break;
+          }
         }
       });
 
-      // Atualiza a tabela plantoes
       renderPlantoes(plantoesData);
-
-      // Atualiza o jsonData (TED + Mutirão) "Horas Neuro" para refletir a soma das horas atualizadas
       atualizarHorasNeuro();
-
-      alert("Horas atualizadas para os médicos selecionados!");
+      alert("Horas atualizadas para as linhas selecionadas!");
     }
 
-    // Atualiza o jsonData "Horas Neuro" somando as horas do plantoesData agrupadas por médico
     function atualizarHorasNeuro() {
-      // Cria mapa de soma horas por médico
       const somaHorasPorMedico = {};
-
       plantoesData.forEach(item => {
         const nome = item["QUEM REALIZOU"]?.trim().toLowerCase() || "";
         const horasStr = item.HS || "00:00:00";
         const horasDec = converterTempoDecimal(horasStr);
-
         if (!somaHorasPorMedico[nome]) {
           somaHorasPorMedico[nome] = 0;
         }
         somaHorasPorMedico[nome] += horasDec;
       });
 
-      // Atualiza jsonData e tabela TED + Mutirão
       jsonData.forEach(entry => {
         const nomeKey = entry.Nome.trim().toLowerCase();
         entry["Horas Neuro"] = somaHorasPorMedico[nomeKey] || 0;
@@ -371,73 +339,152 @@
       renderTable(jsonData);
     }
 
-    // NOVA função que filtra ambas as tabelas conforme os inputs:
+    // FILTRO atualizado para filtrar nome e datas na aba plantão, e nome na aba TED
     function filtrarTudo() {
       const nomeFiltro = document.getElementById("searchInput").value.toLowerCase().trim();
       const dataInicioStr = document.getElementById("dataInicio").value;
       const dataFimStr = document.getElementById("dataFim").value;
 
-      // Filtra TED + Mutirão por nome (igual antes)
       const filteredTED = jsonData.filter(entry =>
         entry.Nome?.toLowerCase().includes(nomeFiltro)
       );
 
-      // Filtra resumo plantão por nome e data
       const filteredPlantoes = plantoesData.filter(item => {
         const nomePlantao = item["QUEM REALIZOU"]?.toLowerCase() || "";
         const incluiNome = nomePlantao.includes(nomeFiltro);
 
         if (!incluiNome) return false;
-
-        // Se não tem data, inclui
         if (!item.DATA) return true;
 
         const dataPlantao = new Date(item.DATA);
-        // Se campo data inválida, inclui
         if (isNaN(dataPlantao.getTime())) return true;
 
-        // Se não tem filtro de datas, inclui tudo
         if (!dataInicioStr && !dataFimStr) return true;
 
-        // Se tem filtro inicio e fim, checa intervalo
         if (dataInicioStr && dataFimStr) {
           const dataInicio = new Date(dataInicioStr);
           const dataFim = new Date(dataFimStr);
-          // Ajusta dataFim para considerar o dia todo (23:59:59)
           dataFim.setHours(23,59,59,999);
           return dataPlantao >= dataInicio && dataPlantao <= dataFim;
         }
-
-        // Se só tem dataInicio
         if (dataInicioStr) {
           const dataInicio = new Date(dataInicioStr);
           return dataPlantao >= dataInicio;
         }
-
-        // Se só tem dataFim
         if (dataFimStr) {
           const dataFim = new Date(dataFimStr);
           dataFim.setHours(23,59,59,999);
           return dataPlantao <= dataFim;
         }
-
         return true;
       });
 
       renderTable(filteredTED);
       renderPlantoes(filteredPlantoes);
+
+      if (calendarioVisivel && calendarInstance) {
+        calendarInstance.removeAllEvents();
+        calendarInstance.addEventSource(mapearEventosPlantao(filteredPlantoes));
+      }
     }
 
-    // Resetar filtro e inputs
     function resetarTudo() {
       document.getElementById("searchInput").value = "";
       document.getElementById("dataInicio").value = "";
       document.getElementById("dataFim").value = "";
       renderTable(jsonData);
       renderPlantoes(plantoesData);
+
+      if (calendarioVisivel && calendarInstance) {
+        calendarInstance.removeAllEvents();
+        calendarInstance.addEventSource(mapearEventosPlantao(plantoesData));
+      }
     }
 
-    // Alterna abas
+    function toggleCalendario() {
+      calendarioVisivel = !calendarioVisivel;
+
+      const tabela = document.getElementById("plantoesTable");
+      const calendarDiv = document.getElementById("calendar");
+      const btn = document.getElementById("toggleCalendarBtn");
+
+      if (calendarioVisivel) {
+        tabela.style.display = "none";
+        calendarDiv.style.display = "block";
+        btn.textContent = "Alternar para Tabela";
+
+        if (!calendarInstance) {
+          inicializarCalendario();
+        } else {
+          atualizarEventosCalendario();
+        }
+      } else {
+        tabela.style.display = "table";
+        calendarDiv.style.display = "none";
+        btn.textContent = "Alternar para Calendário";
+      }
+    }
+
+    function inicializarCalendario() {
+      const calendarEl = document.getElementById("calendar");
+      calendarInstance = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'pt-br',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: ''
+        },
+        events: mapearEventosPlantao(plantoesData),
+        eventDisplay: 'block',
+        eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+        eventDidMount: function(info) {
+          let tooltip = `${info.event.extendedProps.funcao || ''}\nEntrada: ${info.event.extendedProps.entrada || ''}\nSaída: ${info.event.extendedProps.saida || ''}`;
+          info.el.setAttribute('title', tooltip);
+        }
+      });
+      calendarInstance.render();
+    }
+
+    function atualizarEventosCalendario() {
+      const eventos = mapearEventosPlantao(plantoesData);
+      calendarInstance.removeAllEvents();
+      calendarInstance.addEventSource(eventos);
+    }
+
+    function mapearEventosPlantao(dados) {
+      return dados.map(item => {
+        let dataInicioStr = item.DATA ? item.DATA.split(" ")[0] : null;
+        if (!dataInicioStr) return null;
+
+        let horaEntrada = item.ENTRADA || "00:00";
+        let horaSaida = item.SAIDA || "23:59";
+
+        if (horaEntrada.length > 5) horaEntrada = horaEntrada.slice(0,5);
+        if (horaSaida.length > 5) horaSaida = horaSaida.slice(0,5);
+
+        const start = `${dataInicioStr}T${horaEntrada}:00`;
+        const end = `${dataInicioStr}T${horaSaida}:00`;
+
+        return {
+          title: `${item["QUEM REALIZOU"] || "Médico"} (${item.FUNCÃO || ""})`,
+          start,
+          end,
+          allDay: false,
+          extendedProps: {
+            funcao: item.FUNCÃO,
+            entrada: item.ENTRADA,
+            saida: item.SAIDA,
+            especialidade: item.ESPECIALIDADE,
+          horas: item.HS,
+          valorHora: item["VALOR HORA"],
+          valorTotal: item["VALOR TOTAL R$"]
+          }
+        };
+      }).filter(e => e !== null);
+    }
+
+    // Função para alternar abas
     function showTab(tabName) {
       const tabs = ["ted", "plantao"];
       tabs.forEach(name => {
@@ -450,3 +497,4 @@
   </script>
 </body>
 </html>
+
