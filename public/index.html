@@ -93,6 +93,13 @@
     #plantoesBody tr.selected {
       background-color: #a3d5ff;
     }
+
+    /* Ajuste para o calendário ocupar largura máxima */
+    #calendar {
+      max-width: 100% !important;
+      width: 100% !important;
+      margin: 0 auto;
+    }
   </style>
 
   <!-- FullCalendar CSS & JS -->
@@ -165,7 +172,7 @@
       <tbody id="plantoesBody"></tbody>
     </table>
 
-    <div id="calendar" style="display:none; max-width: 900px; margin-top: 20px;"></div>
+    <div id="calendar" style="display:none; margin-top: 20px;"></div>
   </div>
 
   <script>
@@ -339,7 +346,6 @@
       renderTable(jsonData);
     }
 
-    // FILTRO atualizado para filtrar nome e datas na aba plantão, e nome na aba TED
     function filtrarTudo() {
       const nomeFiltro = document.getElementById("searchInput").value.toLowerCase().trim();
       const dataInicioStr = document.getElementById("dataInicio").value;
@@ -394,7 +400,6 @@
       document.getElementById("dataFim").value = "";
       renderTable(jsonData);
       renderPlantoes(plantoesData);
-
       if (calendarioVisivel && calendarInstance) {
         calendarInstance.removeAllEvents();
         calendarInstance.addEventSource(mapearEventosPlantao(plantoesData));
@@ -403,88 +408,75 @@
 
     function toggleCalendario() {
       calendarioVisivel = !calendarioVisivel;
-
       const tabela = document.getElementById("plantoesTable");
-      const calendarDiv = document.getElementById("calendar");
+      const calendarioDiv = document.getElementById("calendar");
       const btn = document.getElementById("toggleCalendarBtn");
 
       if (calendarioVisivel) {
         tabela.style.display = "none";
-        calendarDiv.style.display = "block";
+        calendarioDiv.style.display = "block";
         btn.textContent = "Alternar para Tabela";
 
         if (!calendarInstance) {
-          inicializarCalendario();
+          calendarInstance = new FullCalendar.Calendar(calendarioDiv, {
+            initialView: 'dayGridMonth',
+            locale: 'pt-br',
+            height: 'auto',
+            events: mapearEventosPlantao(plantoesData),
+            eventDidMount: function(info) {
+              const details = info.event.extendedProps;
+              const tooltipContent = `
+                Médico: ${info.event.title}\n
+                Data: ${info.event.start.toLocaleDateString()}\n
+                Per: ${details.per}\n
+                DS: ${details.ds}\n
+                CRM: ${details.crm}\n
+                Função: ${details.funcao}\n
+                Especialidade: ${details.especialidade}\n
+                Horas: ${details.horas}\n
+                Valor Hora: ${details.valorHora}\n
+                Valor Total: ${details.valorTotal}
+              `;
+              info.el.setAttribute('title', tooltipContent);
+            }
+          });
+          calendarInstance.render();
         } else {
-          atualizarEventosCalendario();
+          calendarInstance.refetchEvents();
         }
       } else {
         tabela.style.display = "table";
-        calendarDiv.style.display = "none";
+        calendarioDiv.style.display = "none";
         btn.textContent = "Alternar para Calendário";
       }
     }
 
-    function inicializarCalendario() {
-      const calendarEl = document.getElementById("calendar");
-      calendarInstance = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        locale: 'pt-br',
-        headerToolbar: {
-          left: 'prev,next today',
-          center: 'title',
-          right: ''
-        },
-        events: mapearEventosPlantao(plantoesData),
-        eventDisplay: 'block',
-        eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-        eventDidMount: function(info) {
-          let tooltip = `${info.event.extendedProps.funcao || ''}\nEntrada: ${info.event.extendedProps.entrada || ''}\nSaída: ${info.event.extendedProps.saida || ''}`;
-          info.el.setAttribute('title', tooltip);
+    function mapearEventosPlantao(data) {
+      return data.map(item => {
+        if (!item.DATA) return null;
+        let start = item.DATA;
+        // Ajuste se o campo DATA for string com hora
+        if (typeof start === 'string') {
+          // Apenas data yyyy-mm-dd ou yyyy-mm-dd hh:mm:ss
+          start = start.split(" ")[0];
         }
-      });
-      calendarInstance.render();
-    }
-
-    function atualizarEventosCalendario() {
-      const eventos = mapearEventosPlantao(plantoesData);
-      calendarInstance.removeAllEvents();
-      calendarInstance.addEventSource(eventos);
-    }
-
-    function mapearEventosPlantao(dados) {
-      return dados.map(item => {
-        let dataInicioStr = item.DATA ? item.DATA.split(" ")[0] : null;
-        if (!dataInicioStr) return null;
-
-        let horaEntrada = item.ENTRADA || "00:00";
-        let horaSaida = item.SAIDA || "23:59";
-
-        if (horaEntrada.length > 5) horaEntrada = horaEntrada.slice(0,5);
-        if (horaSaida.length > 5) horaSaida = horaSaida.slice(0,5);
-
-        const start = `${dataInicioStr}T${horaEntrada}:00`;
-        const end = `${dataInicioStr}T${horaSaida}:00`;
-
         return {
-          title: `${item["QUEM REALIZOU"] || "Médico"} (${item.FUNCÃO || ""})`,
-          start,
-          end,
-          allDay: false,
+          title: item["QUEM REALIZOU"] || "Sem Nome",
+          start: start,
           extendedProps: {
-            funcao: item.FUNCÃO,
-            entrada: item.ENTRADA,
-            saida: item.SAIDA,
-            especialidade: item.ESPECIALIDADE,
-          horas: item.HS,
-          valorHora: item["VALOR HORA"],
-          valorTotal: item["VALOR TOTAL R$"]
+            per: item.PER || "",
+            ds: item.DS || "",
+            crm: item.CRM || "",
+            funcao: item.FUNCÃO || "",
+            especialidade: item.ESPECIALIDADE || "",
+            horas: item.HS || "",
+            valorHora: item["VALOR HORA"] || "",
+            valorTotal: item["VALOR TOTAL R$"] || ""
           }
         };
       }).filter(e => e !== null);
     }
 
-    // Função para alternar abas
     function showTab(tabName) {
       const tabs = ["ted", "plantao"];
       tabs.forEach(name => {
@@ -497,4 +489,3 @@
   </script>
 </body>
 </html>
-
