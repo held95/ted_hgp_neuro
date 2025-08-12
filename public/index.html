@@ -220,71 +220,98 @@
 
     // Renderiza tabela resumo_plantao (plantoesData)
     function renderPlantoes(data) {
-  const tbody = document.getElementById("plantoesBody");
-  tbody.innerHTML = "";
-  data.forEach((entry, index) => {
-    const row = document.createElement("tr");
+      const tbody = document.getElementById("plantoesBody");
+      tbody.innerHTML = "";
+      data.forEach((entry, index) => {
+        const row = document.createElement("tr");
 
-    row.setAttribute("data-index", index); // <-- Guarda índice
+        row.setAttribute("data-index", index); // Guarda índice para atualização
 
-    row.innerHTML = `
-      <td>${entry.DATA || ""}</td>
-      <td>${entry.PER || ""}</td>
-      <td>${entry.DS || ""}</td>
-      <td>${entry["QUEM REALIZOU"] || ""}</td>
-      <td>${entry.CRM || ""}</td>
-      <td>${entry.FUNCÃO || ""}</td>
-      <td>${entry.ESPECIALIDADE || ""}</td>
-      <td>${entry.ENTRADA || ""}</td>
-      <td>${entry.SAIDA || ""}</td>
-      <td>${entry.HS || ""}</td>
-      <td>${entry["VALOR HORA"] || ""}</td>
-      <td>${entry["VALOR TOTAL R$"] || ""}</td>
-    `;
+        row.innerHTML = `
+          <td>${entry.DATA || ""}</td>
+          <td>${entry.PER || ""}</td>
+          <td>${entry.DS || ""}</td>
+          <td>${entry["QUEM REALIZOU"] || ""}</td>
+          <td>${entry.CRM || ""}</td>
+          <td>${entry.FUNCÃO || ""}</td>
+          <td>${entry.ESPECIALIDADE || ""}</td>
+          <td>${entry.ENTRADA || ""}</td>
+          <td>${entry.SAIDA || ""}</td>
+          <td>${entry.HS || ""}</td>
+          <td>${entry["VALOR HORA"] || ""}</td>
+          <td>${entry["VALOR TOTAL R$"] || ""}</td>
+        `;
 
-    row.addEventListener("click", function(event) {
-      if(event.ctrlKey || event.metaKey) {
-        this.classList.toggle("selected");
-      } else {
-        clearSelection();
-        this.classList.add("selected");
-      }
-    });
+        // Listener para seleção múltipla de linhas com Ctrl/Cmd
+        row.addEventListener("click", function(event) {
+          if(event.ctrlKey || event.metaKey) {
+            this.classList.toggle("selected");
+          } else {
+            clearSelection();
+            this.classList.add("selected");
+          }
+        });
 
-    tbody.appendChild(row);
-  });
-}
-
-function salvarHoras() {
-  let valorStr = document.getElementById("horasInput").value.trim();
-  valorStr = valorStr.replace(",", ".");
-  const valorInput = parseFloat(valorStr);
-  if (isNaN(valorInput) || valorInput < 0) {
-    alert("Por favor, informe um valor válido para as horas.");
-    return;
-  }
-
-  const linhasSelecionadas = document.querySelectorAll("#plantoesBody tr.selected");
-  if (linhasSelecionadas.length === 0) {
-    alert("Selecione pelo menos uma linha para alterar.");
-    return;
-  }
-
-  linhasSelecionadas.forEach(linha => {
-    const idx = parseInt(linha.getAttribute("data-index"), 10);
-    if (!isNaN(idx)) {
-      plantoesData[idx].HS = converterDecimalParaHHMMSS(valorInput);
+        tbody.appendChild(row);
+      });
     }
-  });
 
-  renderPlantoes(plantoesData);
-  atualizarHorasNeuro();
-  alert("Horas atualizadas para as linhas selecionadas!");
-}
+    function clearSelection() {
+      document.querySelectorAll("#plantoesBody tr.selected").forEach(row => {
+        row.classList.remove("selected");
+      });
+    }
 
-    // Atualiza o jsonData "Horas Neuro" somando as horas do plantoesData agrupadas por médico
+    // Converte HH:MM:SS para decimal
+    function converterTempoDecimal(hhmmss) {
+      const partes = hhmmss.split(":");
+      if (partes.length !== 3) return 0;
+      const h = parseInt(partes[0], 10) || 0;
+      const m = parseInt(partes[1], 10) || 0;
+      const s = parseInt(partes[2], 10) || 0;
+      return h + m / 60 + s / 3600;
+    }
+
+    // Converte decimal para HH:MM:SS
+    function converterDecimalParaHHMMSS(decimalHours) {
+      const h = Math.floor(decimalHours);
+      const m = Math.floor((decimalHours - h) * 60);
+      const s = Math.round(((decimalHours - h) * 60 - m) * 60);
+      const pad = n => String(n).padStart(2, '0');
+      return `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+
+    // Salva horas para todas as linhas selecionadas
+    function salvarHoras() {
+      let valorStr = document.getElementById("horasInput").value.trim();
+      valorStr = valorStr.replace(",", ".");
+      const valorInput = parseFloat(valorStr);
+      if (isNaN(valorInput) || valorInput < 0) {
+        alert("Por favor, informe um valor válido para as horas.");
+        return;
+      }
+
+      const linhasSelecionadas = document.querySelectorAll("#plantoesBody tr.selected");
+      if (linhasSelecionadas.length === 0) {
+        alert("Selecione pelo menos uma linha para alterar.");
+        return;
+      }
+
+      linhasSelecionadas.forEach(linha => {
+        const idx = parseInt(linha.getAttribute("data-index"), 10);
+        if (!isNaN(idx)) {
+          plantoesData[idx].HS = converterDecimalParaHHMMSS(valorInput);
+        }
+      });
+
+      renderPlantoes(plantoesData);
+      atualizarHorasNeuro();
+
+      alert("Horas atualizadas para as linhas selecionadas!");
+    }
+
+    // Atualiza horas neuro na tabela TED + Mutirão
     function atualizarHorasNeuro() {
-      // Cria mapa de soma horas por médico
       const somaHorasPorMedico = {};
 
       plantoesData.forEach(item => {
@@ -298,7 +325,6 @@ function salvarHoras() {
         somaHorasPorMedico[nome] += horasDec;
       });
 
-      // Atualiza jsonData e tabela TED + Mutirão
       jsonData.forEach(entry => {
         const nomeKey = entry.Nome.trim().toLowerCase();
         entry["Horas Neuro"] = somaHorasPorMedico[nomeKey] || 0;
@@ -307,29 +333,13 @@ function salvarHoras() {
       renderTable(jsonData);
     }
 
-    // Filtro simples para a tabela TED + Mutirão (filtra por nome)
+    // Filtro simples para TED + Mutirão
     function filterTable() {
       const query = document.getElementById("searchInput").value.toLowerCase();
       const filtered = jsonData.filter(entry => entry.Nome?.toLowerCase().includes(query));
       renderTable(filtered);
     }
 
-    // Reseta filtro
+    // Reset filtro
     function resetTable() {
-      document.getElementById("searchInput").value = "";
-      renderTable(jsonData);
-    }
-
-    // Alterna abas
-    function showTab(tabName) {
-      const tabs = ["ted", "plantao"];
-      tabs.forEach(name => {
-        document.getElementById("tabContent-" + name).style.display = (name === tabName) ? "block" : "none";
-        document.getElementById("tab-" + name).classList.toggle("active", name === tabName);
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", loadData);
-  </script>
-</body>
-</html>
+      document.get
