@@ -411,6 +411,38 @@
       "Total de Horas": 33.75
     }
   ],
+
+    "Eletivas_Vascular": [
+    {
+      "Data do procedimento": "2025-06-16",
+      "Dia da semana": "segunda",
+      "Nome do paciente": "Francisco Soares Filho",
+      "Paciente": "F S F",
+      "RH": 1115350,
+      "Procedimento 1": "TRATAMENTO CIRÚRGICO DE VARIZES COM LIPODERMATOESCLEROSE OU ÚLCERA (UM MEMBRO)",
+      "Procedimento 2": "TRATAMENTO ESCLEROSANTE NÃO ESTÉTICO DE VARIZES DOS MEMBROS INFERIORES (BILATERAL) - POLIDOCANOL",
+      "Porte": "G",
+      "Valor R$": 1558.95,
+      "Médico": "BIANCA SOLER MONTAGNER",
+      "CRM": 200329,
+      "Assistentes 1": ""
+    },
+    {
+      "Data do procedimento": "2025-06-16",
+      "Dia da semana": "segunda",
+      "Nome do paciente": "Edgar de Souza Monteiro",
+      "Paciente": "E S M",
+      "RH": 1077237,
+      "Procedimento 1": "AMPUTAÇÃO / DESARTICULAÇÃO DE PE E TARSO",
+      "Procedimento 2": "FASCIOTOMIA P/ DESCOMPRESSAO",
+      "Porte": "M",
+      "Valor R$": 1039.3,
+      "Médico": "BIANCA SOLER MONTAGNER",
+      "CRM": 200329,
+      "Assistentes 1": ""
+    }
+  ],
+
   "Resumo_Plantao_HOSP_NCR_PLANT": [
     {
       "DATA": "2025-06-16 00:00:00",
