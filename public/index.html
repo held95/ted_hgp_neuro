@@ -171,6 +171,92 @@ async function loadData(){
   }catch(e){ console.error(e); alert('Erro ao carregar dados: '+e.message);}
 }
 
+function prepararDadosGraficos(plantoes, eletivas){
+  const dadosPl = plantoes || [];
+  const dadosEl = eletivas || [];
+
+  const horasPorMed = {};
+  const valoresPorEsp = {};
+  const horasPorData = {};
+
+  // Plantões
+  dadosPl.forEach(it=>{
+    const nome = (it["QUEM REALIZOU"]||"").trim();
+    const h = converterTempoDecimal(it.HS||"0");
+    horasPorMed[nome] = (horasPorMed[nome]||0) + h;
+
+    const esp = (it.ESPECIALIDADE||"Sem Esp").trim();
+    const v = parseFloat(String(it["VALOR TOTAL R$"]||"0").replace(",",".")||0);
+    valoresPorEsp[esp] = (valoresPorEsp[esp]||0) + v;
+
+    const dt = (String(it.DATA||"")||"").split(" ")[0];
+    if(dt) horasPorData[dt] = (horasPorData[dt]||0) + h;
+  });
+
+  // Eletivas
+  dadosEl.forEach(it=>{
+    const nome = (it["Médico"]||"").trim();
+    // Para horas podemos considerar: 1 procedimento = 1h, ou usar outro critério
+    horasPorMed[nome] = (horasPorMed[nome]||0) + 1;
+
+    const esp = it["Procedimento 1"] ? it["Procedimento 1"].trim() : "Sem Esp";
+    const v = parseFloat(String(it["Valor R$"]||"0").replace(",",".")||0);
+    valoresPorEsp[esp] = (valoresPorEsp[esp]||0) + v;
+
+    const dt = it["Data do procedimento"]||"";
+    if(dt) horasPorData[dt] = (horasPorData[dt]||0) + 1; // 1 por procedimento
+  });
+
+  return { horasPorMed, valoresPorEsp, horasPorData };
+}
+
+function atualizarGraficosComVisiveis(){
+  const visPl = obterPlantoesVisiveis();
+  const visEl = eletivasData; // ou filtrar pelas datas/filtros se necessário
+
+  const ci = (document.getElementById("chartInicio").value||"");
+  const cf = (document.getElementById("chartFim").value||"");
+
+  let plFiltrado = visPl.slice();
+  let elFiltrado = visEl.slice();
+
+  if(ci || cf){
+    plFiltrado = plFiltrado.filter(it=>{
+      const d = (String(it.DATA||"")).split(" ")[0]||"";
+      if(ci && d<ci) return false;
+      if(cf && d>cf) return false;
+      return true;
+    });
+    elFiltrado = elFiltrado.filter(it=>{
+      const d = it["Data do procedimento"]||"";
+      if(ci && d<ci) return false;
+      if(cf && d>cf) return false;
+      return true;
+    });
+  }
+
+  const { horasPorMed, valoresPorEsp, horasPorData } = prepararDadosGraficos(plFiltrado, elFiltrado);
+
+  // Horas por Médico
+  const labelsH = Object.keys(horasPorMed).sort((a,b)=>horasPorMed[b]-horasPorMed[a]);
+  chartHorasMedico.data.labels = labelsH;
+  chartHorasMedico.data.datasets[0].data = labelsH.map(l => Number(horasPorMed[l].toFixed(2)));
+  chartHorasMedico.update();
+
+  // Valores por Especialidade
+  const labelsV = Object.keys(valoresPorEsp);
+  chartValoresEspecialidade.data.labels = labelsV;
+  chartValoresEspecialidade.data.datasets[0].data = labelsV.map(l => Number(valoresPorEsp[l].toFixed(2)));
+  chartValoresEspecialidade.update();
+
+  // Evolução diária
+  const labelsD = Object.keys(horasPorData).filter(d=>d!=="").sort();
+  chartEvolucao.data.labels = labelsD;
+  chartEvolucao.data.datasets[0].data = labelsD.map(d=>Number(horasPorData[d].toFixed(2)));
+  chartEvolucao.update();
+}
+
+
 // Renderizar tabelas
 function renderTable(data){
   const tbody=document.getElementById('tableBody'); tbody.innerHTML='';
