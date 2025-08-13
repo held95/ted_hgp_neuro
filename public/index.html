@@ -265,41 +265,62 @@ document.addEventListener('click',e=>{
   }
 });
 
-// Converter HH:MM:SS para horas decimais
-function hhmmssToDecimal(hhmmss){
+// Converte HH:MM:SS para segundos
+function hhmmssToSeconds(hhmmss){
   const parts = hhmmss.split(':').map(Number);
-  if(parts.length!==3) return NaN;
-  return (parts[0] + parts[1]/60 + parts[2]/3600).toFixed(2);
+  if(parts.length!==3) return 0;
+  return parts[0]*3600 + parts[1]*60 + parts[2];
+}
+
+// Converte segundos para HH:MM:SS
+function secondsToHHMMSS(secs){
+  const h = Math.floor(secs/3600);
+  const m = Math.floor((secs%3600)/60);
+  const s = secs%60;
+  return [h,m,s].map(v=>v.toString().padStart(2,'0')).join(':');
 }
 
 // Salvar alterações Plantões
 function salvarHoras(){
   const novaHora = document.getElementById('horasInput').value.trim();
-  if(!novaHora) return alert('Insira um horário válido (HH:MM:SS)');
-  const horasDec = hhmmssToDecimal(novaHora);
-  if(isNaN(horasDec)) return alert('Formato inválido! Use HH:MM:SS');
+  if(!/^(\d{1,2}):(\d{2}):(\d{2})$/.test(novaHora)) return alert('Insira um horário válido (HH:MM:SS)');
+  const novaSegundos = hhmmssToSeconds(novaHora);
 
   document.querySelectorAll('#plantoesBody tr.selected').forEach(tr=>{
     const idx = tr.rowIndex - 1;
-    plantoesData[idx].HS = horasDec;
-    tr.cells[9].innerText = horasDec;
+    plantoesData[idx].HS = novaSegundos; // armazena em segundos
+    tr.cells[9].innerText = novaHora;    // exibe HH:MM:SS
   });
-  atualizarTudo();
+
+  atualizarTudo(); // atualiza Dados TED + Mutirão
 }
 
-function salvarEletivas(){
-  const val=parseFloat(document.getElementById('valorEletivasInput').value);
-  const porte=document.getElementById('porteInput').value;
-  if(isNaN(val) && !porte) return alert('Insira Valor R$ ou selecione Porte!');
-  document.querySelectorAll('#eletivasBody tr.selected').forEach(tr=>{
-    const idx=tr.rowIndex-1;
-    if(!isNaN(val)){ eletivasData[idx]["Valor R$"]=val; tr.cells[8].innerText=val; }
-    if(porte){ eletivasData[idx]["Porte"]=porte; tr.cells[7].innerText=porte; }
-  });
-  atualizarTudo();
+// Calcular Horas Neuro somando segundos e convertendo para HH:MM:SS
+function calcularHorasNeuro(nome){
+  const totalSegundos = plantoesData
+    .filter(p => p["QUEM REALIZOU"] === nome)
+    .reduce((acc,p)=>acc + (parseInt(p.HS)||0),0);
+  return secondsToHHMMSS(totalSegundos);
 }
 
-document.addEventListener('DOMContentLoaded',()=>{ loadData(); });
-</script>
-</body>
-</html>
+// Ajuste no renderTable
+function renderTable(data){
+  const tbody=document.getElementById('tableBody'); tbody.innerHTML='';
+  data.forEach(it=>{
+    const totalEletivas = eletivasData
+      .filter(e => e.Médico===it.Nome)
+      .reduce((acc,e)=>acc + parseFloat(String(e["Valor R$"]||0)),0);
+    const horasNeuro = calcularHorasNeuro(it.Nome);
+    const row=`<tr>
+      <td>${it.Nome||''}</td>
+      <td>${it.CRM||''}</td>
+      <td>${it.ESPECIALIDADE||''}</td>
+      <td>${it["Valor ELET"]||0}</td>
+      <td>${it["Valor Amb"]||0}</td>
+      <td>${it.Mutirao||0}</td>
+      <td>${horasNeuro}</td>
+      <td>${totalEletivas.toFixed(2)}</td>
+    </tr>`;
+    tbody.insertAdjacentHTML('beforeend',row);
+  });
+}
