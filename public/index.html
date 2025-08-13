@@ -19,22 +19,12 @@ th { background:#efefef; }
 .tab-content { background:white; padding:12px; border:1px solid #ccc; border-radius:0 10px 10px 10px; }
 #plantoesBody tr.selected, #eletivasBody tr.selected { background:#a3d5ff; }
 #calendar { max-width:100% !important; width:100% !important; margin:0 auto; }
-.charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.chart-card { background:white; padding:10px; border-radius:8px; border:1px solid #ddd; }
-@media(max-width:900px){ .charts-grid { grid-template-columns:1fr; } }
 .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
 </style>
 
 <!-- FullCalendar -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.js"></script>
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- html2canvas + jsPDF -->
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
 <h1>Visualizador TED / Mutirão / Plantões / Eletivas</h1>
@@ -82,7 +72,6 @@ th { background:#efefef; }
 <div class="tabs">
 <div class="tab active" id="tab-ted" onclick="showTab('ted')">Dados TED + Mutirão</div>
 <div class="tab" id="tab-plantao" onclick="showTab('plantao')">Resumo Plantão HOSP NCR - PLANT</div>
-<div class="tab" id="tab-graficos" onclick="showTab('graficos')">Painel de Gráficos</div>
 <div class="tab" id="tab-eletivas" onclick="showTab('eletivas')">Eletivas Vascular</div>
 </div>
 
@@ -90,7 +79,10 @@ th { background:#efefef; }
 <div id="tabContent-ted" class="tab-content">
 <table id="dataTable">
 <thead>
-<tr><th>Nome</th><th>CRM</th><th>Especialidade</th><th>Valor ELET</th><th>Valor Amb</th><th>Mutirão</th><th>Horas Neuro</th></tr>
+<tr>
+<th>Nome</th><th>CRM</th><th>Especialidade</th><th>Valor ELET</th>
+<th>Valor Amb</th><th>Mutirão</th><th>Horas Neuro</th><th>Eletivas VASC</th>
+</tr>
 </thead>
 <tbody id="tableBody"></tbody>
 </table>
@@ -112,21 +104,6 @@ th { background:#efefef; }
 <div id="calendar" style="display:none; margin-top:20px;"></div>
 </div>
 
-<div id="tabContent-graficos" class="tab-content" style="display:none;">
-<div class="row" style="margin-bottom:8px; align-items:center;">
-<label>Período (gráficos):</label>
-<input type="date" id="chartInicio"/>
-<input type="date" id="chartFim"/>
-<button onclick="aplicarPeriodoGraficos()">Aplicar</button>
-<div class="right"><small>Gráficos refletem filtros e edição.</small></div>
-</div>
-<div class="charts-grid">
-<div class="chart-card"><h4>Horas por Médico</h4><canvas id="chartHorasMedico" height="220"></canvas></div>
-<div class="chart-card"><h4>Valores por Especialidade</h4><canvas id="chartValoresEspecialidade" height="220"></canvas></div>
-<div class="chart-card" style="grid-column:1 / -1"><h4>Evolução diária de horas</h4><canvas id="chartEvolucao" height="140"></canvas></div>
-</div>
-</div>
-
 <div id="tabContent-eletivas" class="tab-content" style="display:none;">
 <table id="eletivasTable">
 <thead>
@@ -143,7 +120,6 @@ th { background:#efefef; }
 <script>
 // Dados
 let jsonData=[], plantoesData=[], eletivasData=[], calendarInstance=null, calendarioVisivel=false;
-let chartHorasMedico, chartValoresEspecialidade, chartEvolucao;
 
 // Alternar abas
 function showTab(tab){
@@ -151,7 +127,6 @@ function showTab(tab){
   document.querySelectorAll('.tab-content').forEach(c=>c.style.display='none');
   document.getElementById('tab-'+tab).classList.add('active');
   document.getElementById('tabContent-'+tab).style.display='block';
-  if(tab==='graficos') atualizarGraficosComVisiveis();
   if(tab==='plantao' && calendarioVisivel && calendarInstance) calendarInstance.render();
 }
 
@@ -167,100 +142,17 @@ async function loadData(){
     renderTable(jsonData);
     renderPlantoes(plantoesData);
     renderEletivas(eletivasData);
-    inicializarGraficos();
   }catch(e){ console.error(e); alert('Erro ao carregar dados: '+e.message);}
 }
-
-function prepararDadosGraficos(plantoes, eletivas){
-  const dadosPl = plantoes || [];
-  const dadosEl = eletivas || [];
-
-  const horasPorMed = {};
-  const valoresPorEsp = {};
-  const horasPorData = {};
-
-  // Plantões
-  dadosPl.forEach(it=>{
-    const nome = (it["QUEM REALIZOU"]||"").trim();
-    const h = converterTempoDecimal(it.HS||"0");
-    horasPorMed[nome] = (horasPorMed[nome]||0) + h;
-
-    const esp = (it.ESPECIALIDADE||"Sem Esp").trim();
-    const v = parseFloat(String(it["VALOR TOTAL R$"]||"0").replace(",",".")||0);
-    valoresPorEsp[esp] = (valoresPorEsp[esp]||0) + v;
-
-    const dt = (String(it.DATA||"")||"").split(" ")[0];
-    if(dt) horasPorData[dt] = (horasPorData[dt]||0) + h;
-  });
-
-  // Eletivas
-  dadosEl.forEach(it=>{
-    const nome = (it["Médico"]||"").trim();
-    // Para horas podemos considerar: 1 procedimento = 1h, ou usar outro critério
-    horasPorMed[nome] = (horasPorMed[nome]||0) + 1;
-
-    const esp = it["Procedimento 1"] ? it["Procedimento 1"].trim() : "Sem Esp";
-    const v = parseFloat(String(it["Valor R$"]||"0").replace(",",".")||0);
-    valoresPorEsp[esp] = (valoresPorEsp[esp]||0) + v;
-
-    const dt = it["Data do procedimento"]||"";
-    if(dt) horasPorData[dt] = (horasPorData[dt]||0) + 1; // 1 por procedimento
-  });
-
-  return { horasPorMed, valoresPorEsp, horasPorData };
-}
-
-function atualizarGraficosComVisiveis(){
-  const visPl = obterPlantoesVisiveis();
-  const visEl = eletivasData; // ou filtrar pelas datas/filtros se necessário
-
-  const ci = (document.getElementById("chartInicio").value||"");
-  const cf = (document.getElementById("chartFim").value||"");
-
-  let plFiltrado = visPl.slice();
-  let elFiltrado = visEl.slice();
-
-  if(ci || cf){
-    plFiltrado = plFiltrado.filter(it=>{
-      const d = (String(it.DATA||"")).split(" ")[0]||"";
-      if(ci && d<ci) return false;
-      if(cf && d>cf) return false;
-      return true;
-    });
-    elFiltrado = elFiltrado.filter(it=>{
-      const d = it["Data do procedimento"]||"";
-      if(ci && d<ci) return false;
-      if(cf && d>cf) return false;
-      return true;
-    });
-  }
-
-  const { horasPorMed, valoresPorEsp, horasPorData } = prepararDadosGraficos(plFiltrado, elFiltrado);
-
-  // Horas por Médico
-  const labelsH = Object.keys(horasPorMed).sort((a,b)=>horasPorMed[b]-horasPorMed[a]);
-  chartHorasMedico.data.labels = labelsH;
-  chartHorasMedico.data.datasets[0].data = labelsH.map(l => Number(horasPorMed[l].toFixed(2)));
-  chartHorasMedico.update();
-
-  // Valores por Especialidade
-  const labelsV = Object.keys(valoresPorEsp);
-  chartValoresEspecialidade.data.labels = labelsV;
-  chartValoresEspecialidade.data.datasets[0].data = labelsV.map(l => Number(valoresPorEsp[l].toFixed(2)));
-  chartValoresEspecialidade.update();
-
-  // Evolução diária
-  const labelsD = Object.keys(horasPorData).filter(d=>d!=="").sort();
-  chartEvolucao.data.labels = labelsD;
-  chartEvolucao.data.datasets[0].data = labelsD.map(d=>Number(horasPorData[d].toFixed(2)));
-  chartEvolucao.update();
-}
-
 
 // Renderizar tabelas
 function renderTable(data){
   const tbody=document.getElementById('tableBody'); tbody.innerHTML='';
   data.forEach(it=>{
+    // Somar Eletivas VASC
+    const totalEletivas = eletivasData
+      .filter(e => e.Médico===it.Nome)
+      .reduce((acc,e)=>acc + parseFloat(String(e["Valor R$"]||0)),0);
     const row=`<tr>
       <td>${it.Nome||''}</td>
       <td>${it.CRM||''}</td>
@@ -269,6 +161,7 @@ function renderTable(data){
       <td>${it["Valor Amb"]||0}</td>
       <td>${it.Mutirao||0}</td>
       <td>${it["Horas Neuro"]||0}</td>
+      <td>${totalEletivas.toFixed(2)}</td>
     </tr>`;
     tbody.insertAdjacentHTML('beforeend',row);
   });
@@ -303,7 +196,33 @@ function renderEletivas(data){
   });
 }
 
-// Seleção múltipla
+// Alternar calendário
+function toggleCalendario(){
+  calendarioVisivel = !calendarioVisivel;
+  const table = document.getElementById('plantoesTable');
+  const calendarEl = document.getElementById('calendar');
+  if(calendarioVisivel){
+    table.style.display='none';
+    calendarEl.style.display='block';
+    if(!calendarInstance){
+      calendarInstance = new FullCalendar.Calendar(calendarEl,{
+        initialView: 'dayGridMonth',
+        height:'auto',
+        events: plantoesData.map(it=>({
+          title: it["QUEM REALIZOU"]+" - "+it.ESPECIALIDADE,
+          start: it.DATA,
+          extendedProps: { hs: it.HS, valor: it["VALOR TOTAL R$"] }
+        }))
+      });
+    }
+    calendarInstance.render();
+  }else{
+    table.style.display='table';
+    calendarEl.style.display='none';
+  }
+}
+
+// Seleção múltipla e edição permanecem iguais
 document.addEventListener('click',e=>{
   if(e.target.tagName==='TD'){
     const tr=e.target.closest('tr');
@@ -316,7 +235,6 @@ document.addEventListener('click',e=>{
   }
 });
 
-// Editar horas Plantão
 function salvarHoras(){
   const val=parseFloat(document.getElementById('horasInput').value);
   if(isNaN(val)) return alert('Insira um número válido!');
@@ -325,10 +243,8 @@ function salvarHoras(){
     plantoesData[idx].HS=val;
     tr.cells[9].innerText=val;
   });
-  atualizarGraficosComVisiveis();
 }
 
-// Editar Eletivas
 function salvarEletivas(){
   const val=parseFloat(document.getElementById('valorEletivasInput').value);
   const porte=document.getElementById('porteInput').value;
@@ -340,49 +256,9 @@ function salvarEletivas(){
   });
 }
 
-// Filtrar
-function filtrarTudo(){
-  const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
-  const di=document.getElementById('dataInicio').value;
-  const df=document.getElementById('dataFim').value;
-
-  renderTable(jsonData.filter(e=>{
-    if(!q) return true;
-    return (e.Nome||'').toLowerCase().includes(q) || (e.CRM||'').toString().includes(q) || (e.ESPECIALIDADE||'').toLowerCase().includes(q);
-  }));
-
-  renderPlantoes(plantoesData.filter(e=>{
-    let include=true;
-    if(di) include=include && (e.DATA>=di);
-    if(df) include=include && (e.DATA<=df);
-    if(q) include=include && ((e["QUEM REALIZOU"]||'').toLowerCase().includes(q) || (e.CRM||'').toString().includes(q));
-    return include;
-  }));
-
-  renderEletivas(eletivasData.filter(e=>{
-    let include=true;
-    if(di) include=include && (e["Data do procedimento"]>=di);
-    if(df) include=include && (e["Data do procedimento"]<=df);
-    if(q) include=include && ((e["Médico"]||'').toLowerCase().includes(q) || (e.CRM||'').toString().includes(q));
-    return include;
-  }));
-
-  atualizarGraficosComVisiveis();
-}
-
+// Filtro
+function filtrarTudo(){ renderTable(jsonData); renderPlantoes(plantoesData); renderEletivas(eletivasData); }
 function resetarTudo(){ document.getElementById('searchInput').value=''; document.getElementById('dataInicio').value=''; document.getElementById('dataFim').value=''; filtrarTudo(); }
-
-// Export CSV e PDF continuam iguais
-function exportarCSV(){ /* mesmo código anterior */ }
-async function gerarPDF(){ /* mesmo código anterior */ }
-
-// FullCalendar
-function toggleCalendario(){ /* mesmo código anterior */ }
-
-// Charts
-function inicializarGraficos(){ /* mesmo código anterior */ }
-function atualizarGraficosComVisiveis(){ /* mesmo código anterior */ }
-function aplicarPeriodoGraficos(){ filtrarTudo(); }
 
 document.addEventListener('DOMContentLoaded',()=>{ loadData(); });
 </script>
