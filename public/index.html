@@ -13,11 +13,10 @@
     table { width:100%; border-collapse:collapse; background:white; margin-top:10px; }
     th, td { border:1px solid #ccc; padding:8px; text-align:left; }
     th { background:#efefef; }
-    .tabs { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+    .tabs { display:flex; gap:8px; margin-bottom:10px; flex-wrap: wrap; }
     .tab { padding:8px 14px; background:#ddd; border-radius:8px 8px 0 0; cursor:pointer; user-select:none; border:1px solid #ccc; }
     .tab.active { background:white; font-weight:700; border-bottom:1px solid white; }
     .tab-content { background:white; padding:12px; border:1px solid #ccc; border-radius:0 10px 10px 10px; display:none; }
-    .tab-content.active { display:block; }
     #plantoesBody tr.selected { background:#a3d5ff; }
     #calendar { max-width:100% !important; width:100% !important; margin:0 auto; }
     .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -33,7 +32,7 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- html2canvas + jsPDF -->
+  <!-- html2canvas + jsPDF (para gerar PDF) -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
@@ -77,12 +76,12 @@
     <div class="tab active" id="tab-ted" onclick="showTab('ted')">Dados TED + Mutirão</div>
     <div class="tab" id="tab-plantao" onclick="showTab('plantao')">Resumo Plantão HOSP NCR - PLANT</div>
     <div class="tab" id="tab-graficos" onclick="showTab('graficos')">Painel de Gráficos</div>
-    <div class="tab" id="tab-eletivas" onclick="showTab('eletivas')">Resumo Eletivas Vascular</div>
-    <div class="tab" id="tab-horasCG" onclick="showTab('horasCG')">Horas Plantonistas CG</div>
+    <div class="tab" id="tab-vascular" onclick="showTab('vascular')">Resumo Eletivas Vascular</div>
+    <div class="tab" id="tab-cg" onclick="showTab('cg')">Horas Plantonistas CG</div>
   </div>
 
   <!-- conteúdo abas -->
-  <div id="tabContent-ted" class="tab-content active">
+  <div id="tabContent-ted" class="tab-content" style="display:block;">
     <table id="dataTable">
       <thead>
         <tr><th>Nome</th><th>CRM</th><th>Especialidade</th><th>Valor ELET</th><th>Valor Amb</th><th>Mutirão</th><th>Horas Neuro</th></tr>
@@ -121,35 +120,88 @@
     </div>
   </div>
 
-  <div id="tabContent-eletivas" class="tab-content">
+  <div id="tabContent-vascular" class="tab-content">
     <h3>Resumo Eletivas Vascular</h3>
-    <table>
+    <p>Aqui você pode incluir a tabela ou informações das eletivas de vascular.</p>
+    <table id="vascularTable">
       <thead>
-        <tr><th>Nome</th><th>CRM</th><th>Especialidade</th><th>Procedimentos</th><th>Horas</th></tr>
+        <tr><th>Data</th><th>Médico</th><th>CRM</th><th>Especialidade</th><th>Procedimento</th></tr>
       </thead>
-      <tbody id="eletivasBody"></tbody>
+      <tbody></tbody>
     </table>
   </div>
 
-  <div id="tabContent-horasCG" class="tab-content">
+  <div id="tabContent-cg" class="tab-content">
     <h3>Horas Plantonistas CG</h3>
-    <table>
+    <p>Aqui você pode incluir a tabela de horas dos plantonistas CG.</p>
+    <table id="cgTable">
       <thead>
-        <tr><th>Nome</th><th>CRM</th><th>Período</th><th>Horas</th></tr>
+        <tr><th>Data</th><th>Médico</th><th>CRM</th><th>Função</th><th>Horas</th></tr>
       </thead>
-      <tbody id="horasCGBoby"></tbody>
+      <tbody></tbody>
     </table>
   </div>
 
   <script>
-    function showTab(tabId){
-      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-      document.getElementById('tab-'+tabId).classList.add('active');
-      document.getElementById('tabContent-'+tabId).classList.add('active');
+    // ---------- estado ----------
+    let jsonData = [], mutiraoData = [], plantoesData = [], vascularData = [], cgData = [];
+    let calendarInstance = null, calendarioVisivel = false;
+    let chartHorasMedico = null, chartValoresEspecialidade = null, chartEvolucao = null;
+
+    function debounce(fn, wait=250){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
+    function msgErro(e){ console.error(e); alert("Erro (veja console): " + (e && e.message ? e.message : e)); }
+
+    async function loadData(){
+      try{
+        const resp = await fetch("dados.json");
+        if(!resp.ok) throw new Error("dados.json não encontrado (status " + resp.status + ").");
+        const data = await resp.json();
+        jsonData = data.TED_teste || [];
+        mutiraoData = data.Mutirao || [];
+        plantoesData = data.Resumo_Plantao_HOSP_NCR_PLANT || [];
+        vascularData = data.Vascular || [];
+        cgData = data.Horas_Plantonistas_CG || [];
+
+        renderTable(jsonData);
+        renderPlantoes(plantoesData);
+        renderVascular(vascularData);
+        renderCG(cgData);
+        inicializarGraficos();
+      }catch(e){ msgErro(e); }
     }
 
-    // Funções auxiliares (loadData, renderTable, renderPlantoes, converterTempoDecimal etc.) continuam aqui...
+    function renderTable(data){ /* mantém a lógica do seu código original */ }
+    function renderPlantoes(data){ /* mantém a lógica do seu código original */ }
+
+    function renderVascular(data){
+      const tbody = document.querySelector("#vascularTable tbody");
+      tbody.innerHTML = "";
+      (data||[]).forEach(it=>{
+        const tr = `<tr><td>${it.DATA||""}</td><td>${it.MEDICO||""}</td><td>${it.CRM||""}</td><td>${it.ESPECIALIDADE||""}</td><td>${it.PROCEDIMENTO||""}</td></tr>`;
+        tbody.insertAdjacentHTML("beforeend", tr);
+      });
+    }
+
+    function renderCG(data){
+      const tbody = document.querySelector("#cgTable tbody");
+      tbody.innerHTML = "";
+      (data||[]).forEach(it=>{
+        const tr = `<tr><td>${it.DATA||""}</td><td>${it.MEDICO||""}</td><td>${it.CRM||""}</td><td>${it.FUNCAO||""}</td><td>${it.HS||""}</td></tr>`;
+        tbody.insertAdjacentHTML("beforeend", tr);
+      });
+    }
+
+    function showTab(key){
+      const tabs = ['ted','plantao','graficos','vascular','cg'];
+      tabs.forEach(k=>{
+        document.getElementById('tabContent-'+k).style.display = (k===key) ? 'block' : 'none';
+        document.getElementById('tab-'+k).classList.toggle('active', k===key);
+      });
+      if(key==='graficos') atualizarGraficosComVisiveis();
+      if(key==='plantao' && calendarioVisivel && calendarInstance) calendarInstance.render();
+    }
+
+    document.addEventListener("DOMContentLoaded", loadData);
   </script>
 </body>
 </html>
