@@ -116,7 +116,7 @@ th { background:#efefef; }
 </div>
 
 <script>
-let jsonData=[], plantoesData=[], eletivasData=[], calendarInstance=null, calendarioVisivel=false;
+let jsonData=[], mutiraoData=[], plantoesData=[], eletivasData=[], calendarInstance=null, calendarioVisivel=false;
 
 // Alternar abas
 function showTab(tab){
@@ -134,6 +134,7 @@ async function loadData(){
     if(!resp.ok) throw new Error('dados.json não encontrado');
     const data = await resp.json();
     jsonData = data.TED_teste||[];
+    mutiraoData = data.Mutirao||[]; // array de mutirões
     plantoesData = data.Resumo_Plantao_HOSP_NCR_PLANT||[];
     eletivasData = data.Eletivas_Vascular||[];
     atualizarTudo();
@@ -151,16 +152,23 @@ function atualizarTudo(){
 function renderTable(data){
   const tbody=document.getElementById('tableBody'); tbody.innerHTML='';
   data.forEach(it=>{
+    // Total de Eletivas do médico
     const totalEletivas = eletivasData
       .filter(e => e.Médico===it.Nome)
       .reduce((acc,e)=>acc + parseFloat(String(e["Valor R$"]||0)),0);
+    
+    // Total de Mutirão do médico
+    const totalMutirao = mutiraoData
+      .filter(m => m.Médico === it.Nome)
+      .reduce((acc,m)=> acc + parseFloat(m["Valor R$"]||0), 0);
+
     const row=`<tr>
       <td>${it.Nome||''}</td>
       <td>${it.CRM||''}</td>
       <td>${it.ESPECIALIDADE||''}</td>
       <td>${it["Valor ELET"]||0}</td>
       <td>${it["Valor Amb"]||0}</td>
-      <td>${it.Mutirao||0}</td>
+      <td>${totalMutirao.toFixed(2)}</td>
       <td>${it["Horas Neuro"]||0}</td>
       <td>${totalEletivas.toFixed(2)}</td>
     </tr>`;
@@ -203,7 +211,7 @@ function filtrarTudo(){
   const inicio = document.getElementById('dataInicio').value;
   const fim = document.getElementById('dataFim').value;
 
-  function filtrarArray(arr, nomeCampo='Nome'){
+  function filtrarArray(arr){
     return arr.filter(item=>{
       let matchText = Object.values(item).some(v => String(v).toLowerCase().includes(texto));
       let matchData=true;
@@ -213,9 +221,9 @@ function filtrarTudo(){
     });
   }
 
-  renderTable(filtrarArray(jsonData,'Nome'));
-  renderPlantoes(filtrarArray(plantoesData,'QUEM REALIZOU'));
-  renderEletivas(filtrarArray(eletivasData,'Médico'));
+  renderTable(filtrarArray(jsonData));
+  renderPlantoes(filtrarArray(plantoesData));
+  renderEletivas(filtrarArray(eletivasData));
 }
 
 function resetarTudo(){
@@ -263,39 +271,6 @@ document.addEventListener('click',e=>{
     }
   }
 });
-// Salvar alterações Plantões
-function salvarHoras(){
-  const novaSaida = document.getElementById('horasInput').value.trim();
-  if(!novaSaida) return alert('Insira um horário válido (HH:MM)!');
-
-  document.querySelectorAll('#plantoesBody tr.selected').forEach(tr=>{
-    const idx = tr.rowIndex - 1; // índice dentro de plantoesData
-
-    // Atualiza coluna "Saída"
-    plantoesData[idx]["SAIDA"] = novaSaida;
-    tr.cells[8].innerText = novaSaida; // supondo que a coluna "Saída" é a 9ª (índice 8)
-
-    // Recalcula "Horas" (diferença entre Entrada e Saída)
-    const entrada = plantoesData[idx]["ENTRADA"];
-    let horasCalc = calcularHoras(entrada, novaSaida);
-
-    plantoesData[idx]["HS"] = horasCalc;
-    tr.cells[9].innerText = horasCalc; // coluna "Horas"
-
-  });
-
-  atualizarTudo(); // isso reflete no "Dados TED + Mutirão"
-}
-
-// Função para calcular horas no formato HH:MM
-function calcularHoras(entrada, saida){
-  if(!entrada || !saida) return 0;
-  const [eh, em] = entrada.split(':').map(Number);
-  const [sh, sm] = saida.split(':').map(Number);
-  let minutos = (sh*60 + sm) - (eh*60 + em);
-  if(minutos < 0) minutos += 24*60; // caso passe da meia-noite
-  return (minutos/60).toFixed(2); // retorna horas com 2 casas decimais
-}
 
 // Salvar alterações Plantões
 function salvarHoras(){
@@ -306,7 +281,7 @@ function salvarHoras(){
     plantoesData[idx].HS=val;
     tr.cells[9].innerText=val;
   });
-  atualizarTudo(); // atualiza Dados TED + Mutirão
+  atualizarTudo();
 }
 
 // Salvar alterações Eletivas
@@ -319,10 +294,28 @@ function salvarEletivas(){
     if(!isNaN(val)){ eletivasData[idx]["Valor R$"]=val; tr.cells[8].innerText=val; }
     if(porte){ eletivasData[idx]["Porte"]=porte; tr.cells[7].innerText=porte; }
   });
-  atualizarTudo(); // atualiza Dados TED + Mutirão
+  atualizarTudo();
 }
 
 document.addEventListener('DOMContentLoaded',()=>{ loadData(); });
+
+// Exportar CSV (opcional)
+function exportarCSV(){
+  let csvContent = "data:text/csv;charset=utf-8,";
+  const headers = ["Nome","CRM","Especialidade","Valor ELET","Valor Amb","Mutirão","Horas Neuro","Eletivas VASC"];
+  csvContent += headers.join(",") + "\r\n";
+  document.querySelectorAll('#tableBody tr').forEach(tr=>{
+    const row = Array.from(tr.children).map(td=>td.innerText);
+    csvContent += row.join(",") + "\r\n";
+  });
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "dados_ted_mutirao.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 </script>
 </body>
 </html>
