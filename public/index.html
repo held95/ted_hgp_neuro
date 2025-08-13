@@ -22,7 +22,6 @@ th { background:#efefef; }
 .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
 </style>
 
-<!-- FullCalendar -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.js"></script>
 </head>
@@ -40,7 +39,6 @@ th { background:#efefef; }
 <button onclick="resetarTudo()">Resetar</button>
 <div class="right">
 <button onclick="exportarCSV()">Exportar CSV</button>
-<button onclick="gerarPDF()">Gerar PDF (aba ativa)</button>
 </div>
 </div>
 </div>
@@ -118,7 +116,6 @@ th { background:#efefef; }
 </div>
 
 <script>
-// Dados
 let jsonData=[], plantoesData=[], eletivasData=[], calendarInstance=null, calendarioVisivel=false;
 
 // Alternar abas
@@ -139,17 +136,21 @@ async function loadData(){
     jsonData = data.TED_teste||[];
     plantoesData = data.Resumo_Plantao_HOSP_NCR_PLANT||[];
     eletivasData = data.Eletivas_Vascular||[];
-    renderTable(jsonData);
-    renderPlantoes(plantoesData);
-    renderEletivas(eletivasData);
+    atualizarTudo();
   }catch(e){ console.error(e); alert('Erro ao carregar dados: '+e.message);}
 }
 
-// Renderizar tabelas
+// Atualiza todas as tabelas
+function atualizarTudo(){
+  renderTable(jsonData);
+  renderPlantoes(plantoesData);
+  renderEletivas(eletivasData);
+}
+
+// Renderizar tabela Dados TED + Mutirão
 function renderTable(data){
   const tbody=document.getElementById('tableBody'); tbody.innerHTML='';
   data.forEach(it=>{
-    // Somar Eletivas VASC
     const totalEletivas = eletivasData
       .filter(e => e.Médico===it.Nome)
       .reduce((acc,e)=>acc + parseFloat(String(e["Valor R$"]||0)),0);
@@ -196,6 +197,34 @@ function renderEletivas(data){
   });
 }
 
+// Filtro
+function filtrarTudo(){
+  const texto = document.getElementById('searchInput').value.toLowerCase();
+  const inicio = document.getElementById('dataInicio').value;
+  const fim = document.getElementById('dataFim').value;
+
+  function filtrarArray(arr, nomeCampo='Nome'){
+    return arr.filter(item=>{
+      let matchText = Object.values(item).some(v => String(v).toLowerCase().includes(texto));
+      let matchData=true;
+      if(item.DATA && inicio) matchData = item.DATA >= inicio;
+      if(item.DATA && fim) matchData = matchData && item.DATA <= fim;
+      return matchText && matchData;
+    });
+  }
+
+  renderTable(filtrarArray(jsonData,'Nome'));
+  renderPlantoes(filtrarArray(plantoesData,'QUEM REALIZOU'));
+  renderEletivas(filtrarArray(eletivasData,'Médico'));
+}
+
+function resetarTudo(){
+  document.getElementById('searchInput').value='';
+  document.getElementById('dataInicio').value='';
+  document.getElementById('dataFim').value='';
+  atualizarTudo();
+}
+
 // Alternar calendário
 function toggleCalendario(){
   calendarioVisivel = !calendarioVisivel;
@@ -222,7 +251,7 @@ function toggleCalendario(){
   }
 }
 
-// Seleção múltipla e edição permanecem iguais
+// Seleção múltipla
 document.addEventListener('click',e=>{
   if(e.target.tagName==='TD'){
     const tr=e.target.closest('tr');
@@ -235,6 +264,7 @@ document.addEventListener('click',e=>{
   }
 });
 
+// Salvar alterações Plantões
 function salvarHoras(){
   const val=parseFloat(document.getElementById('horasInput').value);
   if(isNaN(val)) return alert('Insira um número válido!');
@@ -243,8 +273,10 @@ function salvarHoras(){
     plantoesData[idx].HS=val;
     tr.cells[9].innerText=val;
   });
+  atualizarTudo(); // atualiza Dados TED + Mutirão
 }
 
+// Salvar alterações Eletivas
 function salvarEletivas(){
   const val=parseFloat(document.getElementById('valorEletivasInput').value);
   const porte=document.getElementById('porteInput').value;
@@ -254,11 +286,8 @@ function salvarEletivas(){
     if(!isNaN(val)){ eletivasData[idx]["Valor R$"]=val; tr.cells[8].innerText=val; }
     if(porte){ eletivasData[idx]["Porte"]=porte; tr.cells[7].innerText=porte; }
   });
+  atualizarTudo(); // atualiza Dados TED + Mutirão
 }
-
-// Filtro
-function filtrarTudo(){ renderTable(jsonData); renderPlantoes(plantoesData); renderEletivas(eletivasData); }
-function resetarTudo(){ document.getElementById('searchInput').value=''; document.getElementById('dataInicio').value=''; document.getElementById('dataFim').value=''; filtrarTudo(); }
 
 document.addEventListener('DOMContentLoaded',()=>{ loadData(); });
 </script>
