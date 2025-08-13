@@ -47,7 +47,7 @@ th { background:#efefef; }
 <div class="row" style="align-items:center;">
 <div>
 <strong>Editar Plantões</strong><br/>
-<input type="number" id="horasInput" step="0.01" min="0" placeholder="Horas (ex: 2.5)"/>
+<input type="text" id="horasInput" placeholder="Horas (ex: 12:30:00)"/>
 <button onclick="salvarHoras()">Salvar Alteração</button>
 </div>
 <div>
@@ -73,7 +73,6 @@ th { background:#efefef; }
 <div class="tab" id="tab-eletivas" onclick="showTab('eletivas')">Eletivas Vascular</div>
 </div>
 
-<!-- ABAS -->
 <div id="tabContent-ted" class="tab-content">
 <table id="dataTable">
 <thead>
@@ -118,7 +117,6 @@ th { background:#efefef; }
 <script>
 let jsonData=[], plantoesData=[], eletivasData=[], calendarInstance=null, calendarioVisivel=false;
 
-// Alternar abas
 function showTab(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c=>c.style.display='none');
@@ -127,7 +125,6 @@ function showTab(tab){
   if(tab==='plantao' && calendarioVisivel && calendarInstance) calendarInstance.render();
 }
 
-// Carregar JSON
 async function loadData(){
   try{
     const resp = await fetch('dados.json');
@@ -140,20 +137,27 @@ async function loadData(){
   }catch(e){ console.error(e); alert('Erro ao carregar dados: '+e.message);}
 }
 
-// Atualiza todas as tabelas
 function atualizarTudo(){
   renderTable(jsonData);
   renderPlantoes(plantoesData);
   renderEletivas(eletivasData);
 }
 
-// Renderizar tabela Dados TED + Mutirão
+// Somatório de Horas por Médico
+function calcularHorasNeuro(nome){
+  return plantoesData
+    .filter(p => p["QUEM REALIZOU"] === nome)
+    .reduce((acc,p)=>acc + parseFloat(p.HS || 0),0)
+    .toFixed(2);
+}
+
 function renderTable(data){
   const tbody=document.getElementById('tableBody'); tbody.innerHTML='';
   data.forEach(it=>{
     const totalEletivas = eletivasData
       .filter(e => e.Médico===it.Nome)
       .reduce((acc,e)=>acc + parseFloat(String(e["Valor R$"]||0)),0);
+    const horasNeuro = calcularHorasNeuro(it.Nome);
     const row=`<tr>
       <td>${it.Nome||''}</td>
       <td>${it.CRM||''}</td>
@@ -161,7 +165,7 @@ function renderTable(data){
       <td>${it["Valor ELET"]||0}</td>
       <td>${it["Valor Amb"]||0}</td>
       <td>${it.Mutirao||0}</td>
-      <td>${it["Horas Neuro"]||0}</td>
+      <td>${horasNeuro}</td>
       <td>${totalEletivas.toFixed(2)}</td>
     </tr>`;
     tbody.insertAdjacentHTML('beforeend',row);
@@ -197,13 +201,12 @@ function renderEletivas(data){
   });
 }
 
-// Filtro
 function filtrarTudo(){
   const texto = document.getElementById('searchInput').value.toLowerCase();
   const inicio = document.getElementById('dataInicio').value;
   const fim = document.getElementById('dataFim').value;
 
-  function filtrarArray(arr, nomeCampo='Nome'){
+  function filtrarArray(arr){
     return arr.filter(item=>{
       let matchText = Object.values(item).some(v => String(v).toLowerCase().includes(texto));
       let matchData=true;
@@ -213,9 +216,9 @@ function filtrarTudo(){
     });
   }
 
-  renderTable(filtrarArray(jsonData,'Nome'));
-  renderPlantoes(filtrarArray(plantoesData,'QUEM REALIZOU'));
-  renderEletivas(filtrarArray(eletivasData,'Médico'));
+  renderTable(filtrarArray(jsonData));
+  renderPlantoes(filtrarArray(plantoesData));
+  renderEletivas(filtrarArray(eletivasData));
 }
 
 function resetarTudo(){
@@ -225,7 +228,6 @@ function resetarTudo(){
   atualizarTudo();
 }
 
-// Alternar calendário
 function toggleCalendario(){
   calendarioVisivel = !calendarioVisivel;
   const table = document.getElementById('plantoesTable');
@@ -251,7 +253,6 @@ function toggleCalendario(){
   }
 }
 
-// Seleção múltipla
 document.addEventListener('click',e=>{
   if(e.target.tagName==='TD'){
     const tr=e.target.closest('tr');
@@ -263,53 +264,29 @@ document.addEventListener('click',e=>{
     }
   }
 });
-// Salvar alterações Plantões
-function salvarHoras(){
-  const novaSaida = document.getElementById('horasInput').value.trim();
-  if(!novaSaida) return alert('Insira um horário válido (HH:MM)!');
 
-  document.querySelectorAll('#plantoesBody tr.selected').forEach(tr=>{
-    const idx = tr.rowIndex - 1; // índice dentro de plantoesData
-
-    // Atualiza coluna "Saída"
-    plantoesData[idx]["SAIDA"] = novaSaida;
-    tr.cells[8].innerText = novaSaida; // supondo que a coluna "Saída" é a 9ª (índice 8)
-
-    // Recalcula "Horas" (diferença entre Entrada e Saída)
-    const entrada = plantoesData[idx]["ENTRADA"];
-    let horasCalc = calcularHoras(entrada, novaSaida);
-
-    plantoesData[idx]["HS"] = horasCalc;
-    tr.cells[9].innerText = horasCalc; // coluna "Horas"
-
-  });
-
-  atualizarTudo(); // isso reflete no "Dados TED + Mutirão"
-}
-
-// Função para calcular horas no formato HH:MM
-function calcularHoras(entrada, saida){
-  if(!entrada || !saida) return 0;
-  const [eh, em] = entrada.split(':').map(Number);
-  const [sh, sm] = saida.split(':').map(Number);
-  let minutos = (sh*60 + sm) - (eh*60 + em);
-  if(minutos < 0) minutos += 24*60; // caso passe da meia-noite
-  return (minutos/60).toFixed(2); // retorna horas com 2 casas decimais
+// Converter HH:MM:SS para horas decimais
+function hhmmssToDecimal(hhmmss){
+  const parts = hhmmss.split(':').map(Number);
+  if(parts.length!==3) return NaN;
+  return (parts[0] + parts[1]/60 + parts[2]/3600).toFixed(2);
 }
 
 // Salvar alterações Plantões
 function salvarHoras(){
-  const val=parseFloat(document.getElementById('horasInput').value);
-  if(isNaN(val)) return alert('Insira um número válido!');
+  const novaHora = document.getElementById('horasInput').value.trim();
+  if(!novaHora) return alert('Insira um horário válido (HH:MM:SS)');
+  const horasDec = hhmmssToDecimal(novaHora);
+  if(isNaN(horasDec)) return alert('Formato inválido! Use HH:MM:SS');
+
   document.querySelectorAll('#plantoesBody tr.selected').forEach(tr=>{
-    const idx=tr.rowIndex-1;
-    plantoesData[idx].HS=val;
-    tr.cells[9].innerText=val;
+    const idx = tr.rowIndex - 1;
+    plantoesData[idx].HS = horasDec;
+    tr.cells[9].innerText = horasDec;
   });
-  atualizarTudo(); // atualiza Dados TED + Mutirão
+  atualizarTudo();
 }
 
-// Salvar alterações Eletivas
 function salvarEletivas(){
   const val=parseFloat(document.getElementById('valorEletivasInput').value);
   const porte=document.getElementById('porteInput').value;
@@ -319,7 +296,7 @@ function salvarEletivas(){
     if(!isNaN(val)){ eletivasData[idx]["Valor R$"]=val; tr.cells[8].innerText=val; }
     if(porte){ eletivasData[idx]["Porte"]=porte; tr.cells[7].innerText=porte; }
   });
-  atualizarTudo(); // atualiza Dados TED + Mutirão
+  atualizarTudo();
 }
 
 document.addEventListener('DOMContentLoaded',()=>{ loadData(); });
