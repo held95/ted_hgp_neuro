@@ -47,7 +47,7 @@ th { background:#efefef; }
 <div class="row" style="align-items:center;">
 <div>
 <strong>Editar Plantões</strong><br/>
-<input type="text" id="horasInput" placeholder="Horas (ex: 12:30:00)"/>
+<input type="number" id="horasInput" step="0.01" min="0" placeholder="Horas (ex: 2.5)"/>
 <button onclick="salvarHoras()">Salvar Alteração</button>
 </div>
 <div>
@@ -73,6 +73,7 @@ th { background:#efefef; }
 <div class="tab" id="tab-eletivas" onclick="showTab('eletivas')">Eletivas Vascular</div>
 </div>
 
+<!-- ABAS -->
 <div id="tabContent-ted" class="tab-content">
 <table id="dataTable">
 <thead>
@@ -117,6 +118,7 @@ th { background:#efefef; }
 <script>
 let jsonData=[], plantoesData=[], eletivasData=[], calendarInstance=null, calendarioVisivel=false;
 
+// Alternar abas
 function showTab(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c=>c.style.display='none');
@@ -125,6 +127,7 @@ function showTab(tab){
   if(tab==='plantao' && calendarioVisivel && calendarInstance) calendarInstance.render();
 }
 
+// Carregar JSON
 async function loadData(){
   try{
     const resp = await fetch('dados.json');
@@ -137,60 +140,20 @@ async function loadData(){
   }catch(e){ console.error(e); alert('Erro ao carregar dados: '+e.message);}
 }
 
+// Atualiza todas as tabelas
 function atualizarTudo(){
   renderTable(jsonData);
   renderPlantoes(plantoesData);
   renderEletivas(eletivasData);
 }
 
-// Converte HH:MM:SS para segundos
-function hhmmssToSeconds(hhmmss){
-  const parts = hhmmss.split(':').map(Number);
-  if(parts.length!==3) return 0;
-  return parts[0]*3600 + parts[1]*60 + parts[2];
-}
-
-// Converte segundos para HH:MM:SS
-function secondsToHHMMSS(secs){
-  const h = Math.floor(secs/3600);
-  const m = Math.floor((secs%3600)/60);
-  const s = secs%60;
-  return [h,m,s].map(v=>v.toString().padStart(2,'0')).join(':');
-}
-
-// Salvar alterações Plantões
-function salvarHoras(){
-  const novaHora = document.getElementById('horasInput').value.trim();
-  if(!/^(\d{1,2}):(\d{2}):(\d{2})$/.test(novaHora)) return alert('Insira um horário válido (HH:MM:SS)');
-
-  const novaSegundos = hhmmssToSeconds(novaHora);
-
-  document.querySelectorAll('#plantoesBody tr.selected').forEach(tr=>{
-    const idx = tr.rowIndex - 1;
-    plantoesData[idx].HS = novaSegundos; // armazena em segundos
-    tr.cells[9].innerText = novaHora;    // exibe HH:MM:SS
-  });
-
-  renderTable(jsonData); // atualiza tabela TED + Mutirão
-}
-
-// Calcular Horas Neuro
-function calcularHorasNeuro(nome){
-  const totalSegundos = plantoesData
-    .filter(p => p["QUEM REALIZOU"] === nome)
-    .reduce((acc,p)=>acc + (parseInt(p.HS)||0),0);
-  return secondsToHHMMSS(totalSegundos);
-}
-
-// Renderiza tabela TED + Mutirão
+// Renderizar tabela Dados TED + Mutirão
 function renderTable(data){
-  const tbody=document.getElementById('tableBody'); 
-  tbody.innerHTML='';
+  const tbody=document.getElementById('tableBody'); tbody.innerHTML='';
   data.forEach(it=>{
     const totalEletivas = eletivasData
       .filter(e => e.Médico===it.Nome)
       .reduce((acc,e)=>acc + parseFloat(String(e["Valor R$"]||0)),0);
-    const horasNeuro = calcularHorasNeuro(it.Nome); // HH:MM:SS
     const row=`<tr>
       <td>${it.Nome||''}</td>
       <td>${it.CRM||''}</td>
@@ -198,30 +161,27 @@ function renderTable(data){
       <td>${it["Valor ELET"]||0}</td>
       <td>${it["Valor Amb"]||0}</td>
       <td>${it.Mutirao||0}</td>
-      <td>${horasNeuro}</td>
+      <td>${it["Horas Neuro"]||0}</td>
       <td>${totalEletivas.toFixed(2)}</td>
     </tr>`;
     tbody.insertAdjacentHTML('beforeend',row);
   });
 }
 
-// Renderiza tabela Plantões
 function renderPlantoes(data){
   const tbody=document.getElementById('plantoesBody'); tbody.innerHTML='';
   data.forEach(it=>{
-    const horasDisplay = it.HS ? secondsToHHMMSS(parseInt(it.HS)) : '';
     const row=`<tr>
       <td>${it.DATA||''}</td><td>${it.PER||''}</td><td>${it.DS||''}</td>
       <td>${it["QUEM REALIZOU"]||''}</td><td>${it.CRM||''}</td>
       <td>${it.FUNCAO||''}</td><td>${it.ESPECIALIDADE||''}</td>
       <td>${it.ENTRADA||''}</td><td>${it.SAIDA||''}</td>
-      <td>${horasDisplay}</td><td>${it["VALOR HORA"]||''}</td><td>${it["VALOR TOTAL R$"]||''}</td>
+      <td>${it.HS||''}</td><td>${it["VALOR HORA"]||''}</td><td>${it["VALOR TOTAL R$"]||''}</td>
     </tr>`;
     tbody.insertAdjacentHTML('beforeend',row);
   });
 }
 
-// Renderiza tabela Eletivas
 function renderEletivas(data){
   const tbody=document.getElementById('eletivasBody'); tbody.innerHTML='';
   (data||[]).forEach(it=>{
@@ -237,13 +197,13 @@ function renderEletivas(data){
   });
 }
 
-// Filtros
+// Filtro
 function filtrarTudo(){
   const texto = document.getElementById('searchInput').value.toLowerCase();
   const inicio = document.getElementById('dataInicio').value;
   const fim = document.getElementById('dataFim').value;
 
-  function filtrarArray(arr){
+  function filtrarArray(arr, nomeCampo='Nome'){
     return arr.filter(item=>{
       let matchText = Object.values(item).some(v => String(v).toLowerCase().includes(texto));
       let matchData=true;
@@ -253,9 +213,9 @@ function filtrarTudo(){
     });
   }
 
-  renderTable(filtrarArray(jsonData));
-  renderPlantoes(filtrarArray(plantoesData));
-  renderEletivas(filtrarArray(eletivasData));
+  renderTable(filtrarArray(jsonData,'Nome'));
+  renderPlantoes(filtrarArray(plantoesData,'QUEM REALIZOU'));
+  renderEletivas(filtrarArray(eletivasData,'Médico'));
 }
 
 function resetarTudo(){
@@ -265,20 +225,7 @@ function resetarTudo(){
   atualizarTudo();
 }
 
-// Seleção de linhas
-document.addEventListener('click',e=>{
-  if(e.target.tagName==='TD'){
-    const tr=e.target.closest('tr');
-    if(tr.parentNode.id==='plantoesBody' || tr.parentNode.id==='eletivasBody'){
-      if(!e.ctrlKey && !e.metaKey){
-        tr.parentNode.querySelectorAll('tr').forEach(r=>r.classList.remove('selected'));
-      }
-      tr.classList.toggle('selected');
-    }
-  }
-});
-
-// Calendário FullCalendar
+// Alternar calendário
 function toggleCalendario(){
   calendarioVisivel = !calendarioVisivel;
   const table = document.getElementById('plantoesTable');
@@ -304,8 +251,78 @@ function toggleCalendario(){
   }
 }
 
-// Inicializa
-loadData();
+// Seleção múltipla
+document.addEventListener('click',e=>{
+  if(e.target.tagName==='TD'){
+    const tr=e.target.closest('tr');
+    if(tr.parentNode.id==='plantoesBody' || tr.parentNode.id==='eletivasBody'){
+      if(!e.ctrlKey && !e.metaKey){
+        tr.parentNode.querySelectorAll('tr').forEach(r=>r.classList.remove('selected'));
+      }
+      tr.classList.toggle('selected');
+    }
+  }
+});
+// Salvar alterações Plantões
+function salvarHoras(){
+  const novaSaida = document.getElementById('horasInput').value.trim();
+  if(!novaSaida) return alert('Insira um horário válido (HH:MM)!');
+
+  document.querySelectorAll('#plantoesBody tr.selected').forEach(tr=>{
+    const idx = tr.rowIndex - 1; // índice dentro de plantoesData
+
+    // Atualiza coluna "Saída"
+    plantoesData[idx]["SAIDA"] = novaSaida;
+    tr.cells[8].innerText = novaSaida; // supondo que a coluna "Saída" é a 9ª (índice 8)
+
+    // Recalcula "Horas" (diferença entre Entrada e Saída)
+    const entrada = plantoesData[idx]["ENTRADA"];
+    let horasCalc = calcularHoras(entrada, novaSaida);
+
+    plantoesData[idx]["HS"] = horasCalc;
+    tr.cells[9].innerText = horasCalc; // coluna "Horas"
+
+  });
+
+  atualizarTudo(); // isso reflete no "Dados TED + Mutirão"
+}
+
+// Função para calcular horas no formato HH:MM
+function calcularHoras(entrada, saida){
+  if(!entrada || !saida) return 0;
+  const [eh, em] = entrada.split(':').map(Number);
+  const [sh, sm] = saida.split(':').map(Number);
+  let minutos = (sh*60 + sm) - (eh*60 + em);
+  if(minutos < 0) minutos += 24*60; // caso passe da meia-noite
+  return (minutos/60).toFixed(2); // retorna horas com 2 casas decimais
+}
+
+// Salvar alterações Plantões
+function salvarHoras(){
+  const val=parseFloat(document.getElementById('horasInput').value);
+  if(isNaN(val)) return alert('Insira um número válido!');
+  document.querySelectorAll('#plantoesBody tr.selected').forEach(tr=>{
+    const idx=tr.rowIndex-1;
+    plantoesData[idx].HS=val;
+    tr.cells[9].innerText=val;
+  });
+  atualizarTudo(); // atualiza Dados TED + Mutirão
+}
+
+// Salvar alterações Eletivas
+function salvarEletivas(){
+  const val=parseFloat(document.getElementById('valorEletivasInput').value);
+  const porte=document.getElementById('porteInput').value;
+  if(isNaN(val) && !porte) return alert('Insira Valor R$ ou selecione Porte!');
+  document.querySelectorAll('#eletivasBody tr.selected').forEach(tr=>{
+    const idx=tr.rowIndex-1;
+    if(!isNaN(val)){ eletivasData[idx]["Valor R$"]=val; tr.cells[8].innerText=val; }
+    if(porte){ eletivasData[idx]["Porte"]=porte; tr.cells[7].innerText=porte; }
+  });
+  atualizarTudo(); // atualiza Dados TED + Mutirão
+}
+
+document.addEventListener('DOMContentLoaded',()=>{ loadData(); });
 </script>
 </body>
 </html>
