@@ -263,6 +263,39 @@ document.addEventListener('click',e=>{
     }
   }
 });
+// Salvar alterações Plantões
+function salvarHoras(){
+  const novaSaida = document.getElementById('horasInput').value.trim();
+  if(!novaSaida) return alert('Insira um horário válido (HH:MM)!');
+
+  document.querySelectorAll('#plantoesBody tr.selected').forEach(tr=>{
+    const idx = tr.rowIndex - 1; // índice dentro de plantoesData
+
+    // Atualiza coluna "Saída"
+    plantoesData[idx]["SAIDA"] = novaSaida;
+    tr.cells[8].innerText = novaSaida; // supondo que a coluna "Saída" é a 9ª (índice 8)
+
+    // Recalcula "Horas" (diferença entre Entrada e Saída)
+    const entrada = plantoesData[idx]["ENTRADA"];
+    let horasCalc = calcularHoras(entrada, novaSaida);
+
+    plantoesData[idx]["HS"] = horasCalc;
+    tr.cells[9].innerText = horasCalc; // coluna "Horas"
+
+  });
+
+  atualizarTudo(); // isso reflete no "Dados TED + Mutirão"
+}
+
+// Função para calcular horas no formato HH:MM
+function calcularHoras(entrada, saida){
+  if(!entrada || !saida) return 0;
+  const [eh, em] = entrada.split(':').map(Number);
+  const [sh, sm] = saida.split(':').map(Number);
+  let minutos = (sh*60 + sm) - (eh*60 + em);
+  if(minutos < 0) minutos += 24*60; // caso passe da meia-noite
+  return (minutos/60).toFixed(2); // retorna horas com 2 casas decimais
+}
 
 // Salvar alterações Plantões
 function salvarHoras(){
