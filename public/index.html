@@ -1,403 +1,372 @@
+#===================================== Código com inserção de eletivas da vascular ====================================#
+
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Painel TED + Plantões + Eletivas Vascular</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <style>
-    body{font-family:Arial,sans-serif;margin:12px;}
-    .tabs{display:flex;gap:10px;margin-bottom:10px;}
-    .tabs button{padding:8px 12px;cursor:pointer;}
-    .tabs button.active{background:#007bff;color:white;}
-    table{width:100%;border-collapse:collapse;margin-bottom:20px;}
-    th,td{border:1px solid #ccc;padding:5px;text-align:left;}
-    th{background:#eee;}
-    #calendar{max-width:900px;margin:0 auto;display:none;}
-  </style>
+<meta charset="utf-8"/>
+<title>Visualizador TED - Plataforma</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+body { font-family: Arial, sans-serif; margin:12px; background:#f5f5f5; }
+h1 { text-align:center; margin-bottom:10px; }
+input, select, button { padding:8px; margin:6px 6px 6px 0; border-radius:6px; border:1px solid #ccc; font-size:14px; }
+.row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.filter-section, .edit-section { background:white; padding:12px; border-radius:10px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+table { width:100%; border-collapse:collapse; background:white; margin-top:10px; }
+th, td { border:1px solid #ccc; padding:8px; text-align:left; }
+th { background:#efefef; }
+.tabs { display:flex; gap:8px; margin-bottom:10px; }
+.tab { padding:8px 14px; background:#ddd; border-radius:8px 8px 0 0; cursor:pointer; user-select:none; border:1px solid #ccc; }
+.tab.active { background:white; font-weight:700; border-bottom:1px solid white; }
+.tab-content { background:white; padding:12px; border:1px solid #ccc; border-radius:0 10px 10px 10px; }
+#plantoesBody tr.selected, #eletivasBody tr.selected { background:#a3d5ff; }
+#calendar { max-width:100% !important; width:100% !important; margin:0 auto; }
+.charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.chart-card { background:white; padding:10px; border-radius:8px; border:1px solid #ddd; }
+@media(max-width:900px){ .charts-grid { grid-template-columns:1fr; } }
+.right { margin-left:auto; display:flex; gap:8px; align-items:center; }
+</style>
+
+<!-- FullCalendar -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.js"></script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- html2canvas + jsPDF -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
+<h1>Visualizador TED / Mutirão / Plantões / Eletivas</h1>
+
+<div class="filter-section">
+<div class="row" style="width:100%;">
+<input type="text" id="searchInput" placeholder="Pesquisa global (nome, crm, especialidade)" style="flex:1;" />
+<label for="dataInicio">Data Início:</label>
+<input type="date" id="dataInicio"/>
+<label for="dataFim">Data Fim:</label>
+<input type="date" id="dataFim"/>
+<button onclick="filtrarTudo()">Filtrar</button>
+<button onclick="resetarTudo()">Resetar</button>
+<div class="right">
+<button onclick="exportarCSV()">Exportar CSV</button>
+<button onclick="gerarPDF()">Gerar PDF (aba ativa)</button>
+</div>
+</div>
+</div>
+
+<div class="edit-section">
+<div class="row" style="align-items:center;">
+<div>
+<strong>Editar Horas (Resumo Plantão)</strong><br/>
+<input type="number" id="horasInput" step="0.01" min="0" placeholder="Horas (ex: 2.5)"/>
+<button onclick="salvarHoras()">Salvar Alteração</button>
+</div>
+<div style="margin-left:12px;">
+<small>Selecione múltiplas linhas com Ctrl/Cmd + clique. Após editar, clique em salvar.</small>
+</div>
+</div>
+</div>
 
 <div class="tabs">
-  <button id="tab-ted" class="tab active" onclick="showTab('ted')">Dados TED + Mutirão</button>
-  <button id="tab-plantao" class="tab" onclick="showTab('plantao')">Resumo Plantão HOSP NCR - PLANT</button>
-  <button id="tab-eletivas" class="tab" onclick="showTab('eletivas')">Eletivas Vascular</button>
-  <button id="tab-graficos" class="tab" onclick="showTab('graficos')">Painel de Gráficos</button>
+<div class="tab active" id="tab-ted" onclick="showTab('ted')">Dados TED + Mutirão</div>
+<div class="tab" id="tab-plantao" onclick="showTab('plantao')">Resumo Plantão HOSP NCR - PLANT</div>
+<div class="tab" id="tab-graficos" onclick="showTab('graficos')">Painel de Gráficos</div>
+<div class="tab" id="tab-eletivas" onclick="showTab('eletivas')">Eletivas Vascular</div>
 </div>
 
-<div>
-  <input type="text" id="searchInput" placeholder="Pesquisar...">
-  <input type="date" id="dataInicio"> a <input type="date" id="dataFim">
-  <button onclick="filtrarTudo()">Filtrar</button>
-  <button onclick="resetarTudo()">Resetar</button>
+<!-- ABAS -->
+<div id="tabContent-ted" class="tab-content">
+<table id="dataTable">
+<thead>
+<tr><th>Nome</th><th>CRM</th><th>Especialidade</th><th>Valor ELET</th><th>Valor Amb</th><th>Mutirão</th><th>Horas Neuro</th></tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
 </div>
 
-<!-- ABA TED + MUTIRÃO -->
-<div id="tabContent-ted">
-  <table>
-    <thead>
-      <tr>
-        <th>Nome</th><th>CRM</th><th>Especialidade</th><th>Valor ELET</th>
-        <th>Valor Amb</th><th>Mutirão</th><th>Horas</th><th>ELET VASC</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+<div id="tabContent-plantao" class="tab-content" style="display:none;">
+<div style="margin-bottom:10px;">
+<button id="toggleCalendarBtn" onclick="toggleCalendario()">Alternar para Calendário</button>
+</div>
+<table id="plantoesTable" style="display:table;">
+<thead>
+<tr>
+<th>Data</th><th>Per</th><th>DS</th><th>Quem Realizou</th><th>CRM</th><th>Função</th><th>Especialidade</th>
+<th>Entrada</th><th>Saída</th><th>Horas</th><th>Valor Hora</th><th>Valor Total R$</th>
+</tr>
+</thead>
+<tbody id="plantoesBody"></tbody>
+</table>
+<div id="calendar" style="display:none; margin-top:20px;"></div>
 </div>
 
-<!-- ABA PLANTÃO -->
-<div id="tabContent-plantao" style="display:none;">
-  <button id="toggleCalendarBtn" onclick="toggleCalendario()">Alternar para Calendário</button>
-  <table id="plantoesTable">
-    <thead>
-      <tr>
-        <th>Data</th><th>PER</th><th>DS</th><th>QUEM REALIZOU</th><th>CRM</th>
-        <th>FUNCAO</th><th>ESPECIALIDADE</th><th>ENTRADA</th><th>SAIDA</th>
-        <th>HS</th><th>VALOR HORA</th><th>VALOR TOTAL</th>
-      </tr>
-    </thead>
-    <tbody id="plantoesBody"></tbody>
-  </table>
-  <div id="calendar"></div>
+<div id="tabContent-graficos" class="tab-content" style="display:none;">
+<div class="row" style="margin-bottom:8px; align-items:center;">
+<label>Período (gráficos):</label>
+<input type="date" id="chartInicio"/>
+<input type="date" id="chartFim"/>
+<button onclick="aplicarPeriodoGraficos()">Aplicar</button>
+<div class="right"><small>Gráficos refletem filtros e edição.</small></div>
+</div>
+<div class="charts-grid">
+<div class="chart-card"><h4>Horas por Médico</h4><canvas id="chartHorasMedico" height="220"></canvas></div>
+<div class="chart-card"><h4>Valores por Especialidade</h4><canvas id="chartValoresEspecialidade" height="220"></canvas></div>
+<div class="chart-card" style="grid-column:1 / -1"><h4>Evolução diária de horas</h4><canvas id="chartEvolucao" height="140"></canvas></div>
+</div>
 </div>
 
-<!-- ABA ELETIVAS VASCULAR -->
-<div id="tabContent-eletivas" style="display:none;">
-  <table>
-    <thead>
-      <tr>
-        <th>Data do procedimento</th><th>Dia da semana</th><th>Paciente</th><th>Nome do paciente</th>
-        <th>RH</th><th>Procedimento 1</th><th>Procedimento 2</th><th>Porte</th><th>Valor R$</th>
-        <th>Médico</th><th>CRM</th><th>Assistentes 1</th>
-      </tr>
-    </thead>
-    <tbody id="eletivasBody"></tbody>
-  </table>
-</div>
-
-<!-- ABA GRÁFICOS -->
-<div id="tabContent-graficos" style="display:none;">
-  <canvas id="chartHorasMedico"></canvas>
-  <canvas id="chartValoresEspecialidade"></canvas>
-  <canvas id="chartEvolucao"></canvas>
-  <label>Início: <input type="date" id="chartInicio"></label>
-  <label>Fim: <input type="date" id="chartFim"></label>
-  <button onclick="aplicarPeriodoGraficos()">Aplicar período</button>
+<div id="tabContent-eletivas" class="tab-content" style="display:none;">
+<table id="eletivasTable">
+<thead>
+<tr>
+<th>Data do procedimento</th><th>Dia da semana</th><th>Nome do paciente</th><th>Paciente</th><th>RH</th>
+<th>Procedimento 1</th><th>Procedimento 2</th><th>Porte</th><th>Valor R$</th>
+<th>Médico</th><th>CRM</th><th>Assistentes 1</th>
+</tr>
+</thead>
+<tbody id="eletivasBody"></tbody>
+</table>
 </div>
 
 <script>
-let jsonData = [];      // Dados TED + Mutirão
-let plantoesData = [];  // Resumo Plantão
-let eletivasData = [];  // Eletivas Vascular
-let calendarioVisivel = false;
-let calendarInstance = null;
+let jsonData=[], plantoesData=[], eletivasData=[], calendarInstance=null, calendarioVisivel=false;
 let chartHorasMedico, chartValoresEspecialidade, chartEvolucao;
 
-// ---------- Utilidades de tempo ----------
-function converterTempoDecimal(hhmmss){
-  if(!hhmmss) return 0;
-  const s = String(hhmmss).trim();
-  if(!s) return 0;
-  const parts = s.split(":");
-  if(parts.length===1){ const v=parseFloat(s.replace(",",".")); return isNaN(v)?0:v; }
-  const h=parseInt(parts[0],10)||0,m=parseInt(parts[1],10)||0,sec=parseInt(parts[2]||0,10)||0;
-  return h + m/60 + sec/3600;
-}
-function converterDecimalParaHHMMSS(decimalHours){
-  const h=Math.floor(decimalHours), m=Math.floor((decimalHours-h)*60), s=Math.round(((decimalHours-h)*60-m)*60);
-  const pad = n=>String(n).padStart(2,'0'); return `${pad(h)}:${pad(m)}:${pad(s)}`;
+// Alternar abas
+function showTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.style.display='none');
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('tabContent-'+tab).style.display='block';
+  if(tab==='graficos') atualizarGraficosComVisiveis();
+  if(tab==='plantao' && calendarioVisivel && calendarInstance) calendarInstance.render();
 }
 
-// ---------- Render da Tabela TED + Mutirão ----------
+// Carregar JSON
+async function loadData(){
+  try{
+    const resp = await fetch('dados.json');
+    if(!resp.ok) throw new Error('dados.json não encontrado');
+    const data = await resp.json();
+    jsonData = data.TED_teste||[];
+    plantoesData = data.Resumo_Plantao_HOSP_NCR_PLANT||[];
+    eletivasData = data.Eletivas_Vascular||[];
+    renderTable(jsonData);
+    renderPlantoes(plantoesData);
+    renderEletivas(eletivasData);
+    inicializarGraficos();
+  }catch(e){ console.error(e); alert('Erro ao carregar dados: '+e.message);}
+}
+
+// Renderizar tabelas
 function renderTable(data){
-  const tbody = document.getElementById("tableBody");
-  tbody.innerHTML="";
-  data.forEach(item=>{
+  const tbody=document.getElementById('tableBody'); tbody.innerHTML='';
+  data.forEach(it=>{
     const row=`<tr>
-      <td>${item.Nome||""}</td>
-      <td>${item.CRM||""}</td>
-      <td>${item.ESPECIALIDADE||""}</td>
-      <td>${item.ValorELET||0}</td>
-      <td>${item.ValorAmb||0}</td>
-      <td>${item.Mutirao||0}</td>
-      <td>${item.Horas||0}</td>
-      <td>${item["ELET VASC"]||0}</td>
+      <td>${it.Nome||''}</td>
+      <td>${it.CRM||''}</td>
+      <td>${it.ESPECIALIDADE||''}</td>
+      <td>${it["Valor ELET"]||0}</td>
+      <td>${it["Valor Amb"]||0}</td>
+      <td>${it.Mutirao||0}</td>
+      <td>${it["Horas Neuro"]||0}</td>
     </tr>`;
-    tbody.insertAdjacentHTML("beforeend",row);
+    tbody.insertAdjacentHTML('beforeend',row);
   });
 }
 
-// ---------- Render da Tabela Plantões ----------
 function renderPlantoes(data){
-  const tbody = document.getElementById("plantoesBody");
-  tbody.innerHTML="";
+  const tbody=document.getElementById('plantoesBody'); tbody.innerHTML='';
   data.forEach(it=>{
     const row=`<tr>
-      <td>${it.DATA||""}</td>
-      <td>${it.PER||""}</td>
-      <td>${it.DS||""}</td>
-      <td>${it["QUEM REALIZOU"]||""}</td>
-      <td>${it.CRM||""}</td>
-      <td>${it.FUNCAO||""}</td>
-      <td>${it.ESPECIALIDADE||""}</td>
-      <td>${it.ENTRADA||""}</td>
-      <td>${it.SAIDA||""}</td>
-      <td>${it.HS||""}</td>
-      <td>${it["VALOR HORA"]||0}</td>
-      <td>${it["VALOR TOTAL R$"]||0}</td>
+      <td>${it.DATA||''}</td><td>${it.PER||''}</td><td>${it.DS||''}</td>
+      <td>${it["QUEM REALIZOU"]||''}</td><td>${it.CRM||''}</td>
+      <td>${it.FUNCAO||''}</td><td>${it.ESPECIALIDADE||''}</td>
+      <td>${it.ENTRADA||''}</td><td>${it.SAIDA||''}</td>
+      <td>${it.HS||''}</td><td>${it["VALOR HORA"]||''}</td><td>${it["VALOR TOTAL R$"]||''}</td>
     </tr>`;
-    tbody.insertAdjacentHTML("beforeend",row);
+    tbody.insertAdjacentHTML('beforeend',row);
   });
 }
 
-// ---------- Render Eletivas ----------
 function renderEletivas(data){
-  const tbody = document.getElementById("eletivasBody");
-  tbody.innerHTML="";
-  data.forEach(it=>{
+  const tbody=document.getElementById('eletivasBody'); tbody.innerHTML='';
+  (data||[]).forEach(it=>{
     const row=`<tr>
-      <td>${it["Data do procedimento"]||""}</td>
-      <td>${it["Dia da semana"]||""}</td>
-      <td>${it.Paciente||""}</td>
-      <td>${it["Nome do paciente"]||""}</td>
-      <td>${it.RH||""}</td>
-      <td>${it["Procedimento 1"]||""}</td>
-      <td>${it["Procedimento 2"]||""}</td>
-      <td>${it.Porte||""}</td>
-      <td contenteditable="true" oninput="atualizarEletVasc()">${it["Valor R$"]||0}</td>
-      <td>${it.Médico||""}</td>
-      <td>${it.CRM||""}</td>
-      <td>${it["Assistentes 1"]||""}</td>
+      <td>${it["Data do procedimento"]||''}</td><td>${it["Dia da semana"]||''}</td>
+      <td>${it["Nome do paciente"]||''}</td><td>${it["Paciente"]||''}</td>
+      <td>${it["RH"]||''}</td><td>${it["Procedimento 1"]||''}</td>
+      <td>${it["Procedimento 2"]||''}</td><td>${it["Porte"]||''}</td>
+      <td>${it["Valor R$"]||''}</td><td>${it["Médico"]||''}</td>
+      <td>${it["CRM"]||''}</td><td>${it["Assistentes 1"]||''}</td>
     </tr>`;
-    tbody.insertAdjacentHTML("beforeend",row);
+    tbody.insertAdjacentHTML('beforeend',row);
   });
 }
 
-// ---------- Atualizar ELET VASC ----------
-function atualizarEletVasc(){
-  // Atualizar valores na jsonData
-  // Primeiro ler valores alterados na tabela Eletivas
-  const trs = document.querySelectorAll("#eletivasBody tr");
-  trs.forEach((tr,i)=>{
-    const valCell = tr.children[8];
-    const v = parseFloat(valCell.textContent.replace(",",".")||0);
-    eletivasData[i]["Valor R$"]=v;
-  });
+// Debounce
+function debounce(fn,delay){ let timer; return (...args)=>{ clearTimeout(timer); timer=setTimeout(()=>fn(...args),delay); }}
 
-  // Atualizar coluna ELET VASC
-  jsonData.forEach(ent=>{
-    const medico = (ent.Nome||"").trim();
-    const soma = eletivasData
-                  .filter(e => (e["Médico"]||"").trim()===medico)
-                  .reduce((acc,e)=>acc+(parseFloat(e["Valor R$"]||0)||0),0);
-    ent["ELET VASC"] = Number(soma.toFixed(2));
-  });
-  renderTable(jsonData);
-  atualizarGraficosComVisiveis();
-}
-
-// ---------- Atualizar Horas ----------
-function atualizarHorasNeuro(){
-  const soma={};
-  plantoesData.forEach(it=>{
-    const nome=(it["QUEM REALIZOU"]||"").trim().toLowerCase();
-    soma[nome]=(soma[nome]||0)+converterTempoDecimal(it.HS||"00:00:00");
-  });
-  jsonData.forEach(ent=>{
-    const nome=(ent.Nome||"").trim().toLowerCase();
-    ent["Horas"]=soma[nome]||0;
-  });
-  atualizarEletVasc();
-}
-
-// ---------- Filtros ----------
+// Filtrar
 function filtrarTudo(){
-  const q=(document.getElementById("searchInput").value||"").toLowerCase().trim();
-  const di=document.getElementById("dataInicio").value;
-  const df=document.getElementById("dataFim").value;
+  const q=(document.getElementById('searchInput').value||'').toLowerCase().trim();
+  const di=document.getElementById('dataInicio').value;
+  const df=document.getElementById('dataFim').value;
 
-  const filteredTed = jsonData.filter(e=>{
+  const filteredTed=jsonData.filter(e=>{
     if(!q) return true;
-    return (e.Nome||"").toLowerCase().includes(q) || String(e.CRM||"").includes(q) || (e.ESPECIALIDADE||"").toLowerCase().includes(q);
+    return (e.Nome||'').toLowerCase().includes(q) || (e.CRM||'').toString().includes(q) || (e.ESPECIALIDADE||'').toLowerCase().includes(q);
   });
-
-  const filteredPl = plantoesData.filter(it=>{
-    const nome=(it["QUEM REALIZOU"]||"").toLowerCase();
-    const crm=String(it.CRM||"");
-    const esp=(it.ESPECIALIDADE||"").toLowerCase();
-    const dataPart=String(it.DATA||"").split(" ")[0]||"";
-    let okText=!q || nome.includes(q) || crm.includes(q) || esp.includes(q);
-    let okDate=true;
-    if(di) okDate=okDate&&(dataPart>=di);
-    if(df) okDate=okDate&&(dataPart<=df);
-    return okText && okDate;
-  });
-
   renderTable(filteredTed);
-  renderPlantoes(filteredPl);
-  renderEletivas(eletivasData);
 
-  if(calendarInstance && calendarioVisivel){
-    calendarInstance.removeAllEvents();
-    calendarInstance.addEventSource(mapearEventosPlantao(filteredPl));
-  }
+  const filteredPlantao=plantoesData.filter(e=>{
+    let include=true;
+    if(di) include=include && (e.DATA>=di);
+    if(df) include=include && (e.DATA<=df);
+    if(q) include=include && ((e["QUEM REALIZOU"]||'').toLowerCase().includes(q) || (e.CRM||'').toString().includes(q));
+    return include;
+  });
+  renderPlantoes(filteredPlantao);
+
+  const filteredEletivas=eletivasData.filter(e=>{
+    let include=true;
+    if(di) include=include && (e["Data do procedimento"]>=di);
+    if(df) include=include && (e["Data do procedimento"]<=df);
+    if(q) include=include && ((e["Médico"]||'').toLowerCase().includes(q) || (e.CRM||'').toString().includes(q));
+    return include;
+  });
+  renderEletivas(filteredEletivas);
   atualizarGraficosComVisiveis();
 }
 
-function resetarTudo(){
-  document.getElementById("searchInput").value="";
-  document.getElementById("dataInicio").value="";
-  document.getElementById("dataFim").value="";
-  renderTable(jsonData);
-  renderPlantoes(plantoesData);
-  renderEletivas(eletivasData);
-  if(calendarInstance && calendarioVisivel){
-    calendarInstance.removeAllEvents();
-    calendarInstance.addEventSource(mapearEventosPlantao(plantoesData));
+function resetarTudo(){ document.getElementById('searchInput').value=''; document.getElementById('dataInicio').value=''; document.getElementById('dataFim').value=''; filtrarTudo(); }
+
+// Seleção de linhas Plantão e Eletivas
+document.addEventListener('click',e=>{
+  if(e.target.tagName==='TD'){
+    const tr=e.target.closest('tr');
+    if(tr.parentNode.id==='plantoesBody' || tr.parentNode.id==='eletivasBody'){
+      if(!e.ctrlKey && !e.metaKey){
+        tr.parentNode.querySelectorAll('tr').forEach(r=>r.classList.remove('selected'));
+      }
+      tr.classList.toggle('selected');
+    }
   }
+});
+
+// Editar horas Plantão
+function salvarHoras(){
+  const val=parseFloat(document.getElementById('horasInput').value);
+  if(isNaN(val)) return alert('Insira um número válido!');
+  document.querySelectorAll('#plantoesBody tr.selected').forEach((tr,i)=>{
+    const idx=tr.rowIndex-1;
+    plantoesData[idx].HS=val;
+    tr.cells[9].innerText=val;
+  });
   atualizarGraficosComVisiveis();
 }
 
-// ---------- Abas ----------
-function showTab(key){
-  ['ted','plantao','eletivas','graficos'].forEach(k=>{
-    document.getElementById('tabContent-'+k).style.display=(k===key)?'block':'none';
-    document.getElementById('tab-'+k).classList.toggle('active', k===key);
+// Export CSV
+function exportarCSV(){
+  let rows=[];
+  const activeTab=document.querySelector('.tab.active').id;
+  let table=null;
+  if(activeTab==='tab-ted') table=document.getElementById('dataTable');
+  else if(activeTab==='tab-plantao') table=document.getElementById('plantoesTable');
+  else if(activeTab==='tab-eletivas') table=document.getElementById('eletivasTable');
+  if(!table) return;
+
+  table.querySelectorAll('tr').forEach(tr=>{
+    const cols=Array.from(tr.cells).map(td=>'"'+td.innerText.replace(/"/g,'""')+'"');
+    rows.push(cols.join(';'));
   });
-  if(key==='graficos') atualizarGraficosComVisiveis();
-  if(key==='plantao' && calendarioVisivel && calendarInstance) calendarInstance.render();
+  const csvContent='data:text/csv;charset=utf-8,'+rows.join('\n');
+  const link=document.createElement('a');
+  link.setAttribute('href',csvContent);
+  link.setAttribute('download','export_'+activeTab+'.csv');
+  link.click();
 }
 
-// ---------- Inicialização ----------
-document.addEventListener("DOMContentLoaded", loadData);
-
-function loadData(){
-  // Exemplo de JSON
-  jsonData = [
-    {Nome:"BIANCA SOLER MONTAGNER", CRM:200329, ESPECIALIDADE:"Vascular", ValorELET:0, ValorAmb:0, Mutirao:0, Horas:0, "ELET VASC":0}
-  ];
-  plantoesData = [
-    {DATA:"2025-06-16", PER:"1", DS:"segunda", "QUEM REALIZOU":"BIANCA SOLER MONTAGNER", CRM:200329, FUNCAO:"Cirurgião", ESPECIALIDADE:"Vascular", ENTRADA:"08:00", SAIDA:"12:00", HS:"04:00:00", "VALOR HORA":500, "VALOR TOTAL R$":2000}
-  ];
-  eletivasData = [
-    { "Data do procedimento":"2025-06-16","Dia da semana":"segunda","Nome do paciente":"Francisco Soares Filho","Paciente":"F S F","RH":1115350,"Procedimento 1":"TRATAMENTO CIRÚRGICO DE VARIZES","Procedimento 2":"TRATAMENTO ESCLEROSANTE","Porte":"G","Valor R$":1558.95,"Médico":"BIANCA SOLER MONTAGNER","CRM":200329,"Assistentes 1":"" }
-  ];
-
-  atualizarHorasNeuro();
-  renderPlantoes(plantoesData);
-  renderEletivas(eletivasData);
-  inicializarGraficos();
+// Gerar PDF
+async function gerarPDF(){
+  const activeTab=document.querySelector('.tab.active').id;
+  const el=document.getElementById('tabContent-'+activeTab);
+  const canvas=await html2canvas(el,{scrollY:-window.scrollY});
+  const imgData=canvas.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf=new jsPDF('l','pt','a4');
+  const pdfWidth=pdf.internal.pageSize.getWidth();
+  const pdfHeight=(canvas.height*pdfWidth)/canvas.width;
+  pdf.addImage(imgData,'PNG',0,0,pdfWidth,pdfHeight);
+  pdf.save('export_'+activeTab+'.pdf');
 }
 
-// ---------- Gráficos ----------
-function prepararDadosGraficos(plantoes=[], eletivas=[]){
-  plantoes = plantoes.length?plantoes:plantoesData;
-  eletivas = eletivas.length?eletivas:eletivasData;
-
-  const horasPorMed={}, valoresPorEsp={}, horasPorData={};
-
-  plantoes.forEach(it=>{
-    const nome=it["QUEM REALIZOU"]||"";
-    const h=converterTempoDecimal(it.HS||"00:00:00");
-    horasPorMed[nome]=(horasPorMed[nome]||0)+h;
-
-    const esp=(it.ESPECIALIDADE||"Sem Esp");
-    const v=parseFloat(String(it["VALOR TOTAL R$"]||0))||0;
-    valoresPorEsp[esp]=(valoresPorEsp[esp]||0)+v;
-
-    const dt=(String(it.DATA||"").split(" ")[0])||"";
-    horasPorData[dt]=(horasPorData[dt]||0)+h;
-  });
-
-  eletivas.forEach(it=>{
-    const nome=it["Médico"]||"";
-    const v=parseFloat(it["Valor R$"]||0)||0;
-    valoresPorEsp["ELET VASC"]=(valoresPorEsp["ELET VASC"]||0)+v;
-    horasPorMed[nome]=(horasPorMed[nome]||0); // não altera horas
-  });
-
-  return {horasPorMed,valoresPorEsp,horasPorData};
-}
-
-function inicializarGraficos(){
-  const ctx1=document.getElementById("chartHorasMedico").getContext('2d');
-  chartHorasMedico = new Chart(ctx1,{type:'bar',data:{labels:[],datasets:[{label:'Horas',data:[]}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
-  const ctx2=document.getElementById("chartValoresEspecialidade").getContext('2d');
-  chartValoresEspecialidade = new Chart(ctx2,{type:'pie',data:{labels:[],datasets:[{data:[]}]},options:{responsive:true}});
-  const ctx3=document.getElementById("chartEvolucao").getContext('2d');
-  chartEvolucao = new Chart(ctx3,{type:'line',data:{labels:[],datasets:[{label:'Horas diárias',data:[],fill:true,tension:0.3}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
-  atualizarGraficosComVisiveis();
-}
-
-function atualizarGraficosComVisiveis(){
-  const visPl = obterPlantoesVisiveis();
-  const visEl = eletivasData;
-
-  const ci=(document.getElementById("chartInicio").value||"");
-  const cf=(document.getElementById("chartFim").value||"");
-
-  let plFiltrado = visPl.slice();
-  let elFiltrado = visEl.slice();
-
-  if(ci || cf){
-    plFiltrado = plFiltrado.filter(it=>{
-      const d = (String(it.DATA||"")).split(" ")[0]||"";
-      if(ci && d<ci) return false;
-      if(cf && d>cf) return false;
-      return true;
-    });
-    elFiltrado = elFiltrado.filter(it=>{
-      const d = it["Data do procedimento"]||"";
-      if(ci && d<ci) return false;
-      if(cf && d>cf) return false;
-      return true;
-    });
-  }
-
-  const {horasPorMed,valoresPorEsp,horasPorData} = prepararDadosGraficos(plFiltrado,elFiltrado);
-
-  const labelsH=Object.keys(horasPorMed).sort((a,b)=>horasPorMed[b]-horasPorMed[a]);
-  chartHorasMedico.data.labels=labelsH;
-  chartHorasMedico.data.datasets[0].data=labelsH.map(l=>Number(horasPorMed[l].toFixed(2)));
-  chartHorasMedico.update();
-
-  const labelsV=Object.keys(valoresPorEsp);
-  chartValoresEspecialidade.data.labels=labelsV;
-  chartValoresEspecialidade.data.datasets[0].data=labelsV.map(l=>Number(valoresPorEsp[l].toFixed(2)));
-  chartValoresEspecialidade.update();
-
-  const labelsD=Object.keys(horasPorData).filter(d=>d!=="").sort();
-  chartEvolucao.data.labels=labelsD;
-  chartEvolucao.data.datasets[0].data=labelsD.map(d=>Number(horasPorData[d].toFixed(2)));
-  chartEvolucao.update();
-}
-
-// ---------- Auxiliares ----------
-function obterPlantoesVisiveis(){ return plantoesData; }
-
-function mapearEventosPlantao(data){
-  return data.map(it=>({title:it["QUEM REALIZOU"]||"",start:it.DATA,allDay:true}));
-}
-
+// FullCalendar
 function toggleCalendario(){
   calendarioVisivel=!calendarioVisivel;
-  document.getElementById("calendar").style.display=calendarioVisivel?"block":"none";
-  document.getElementById("plantoesTable").style.display=calendarioVisivel?"none":"table";
+  document.getElementById('calendar').style.display=calendarioVisivel?'block':'none';
+  document.getElementById('plantoesTable').style.display=calendarioVisivel?'none':'table';
   if(calendarioVisivel && !calendarInstance){
-    calendarInstance = new FullCalendar.Calendar(document.getElementById("calendar"),{
+    const calendarEl=document.getElementById('calendar');
+    calendarInstance=new FullCalendar.Calendar(calendarEl,{
       initialView:'dayGridMonth',
-      events: mapearEventosPlantao(plantoesData)
+      height:650,
+      events: plantoesData.map(e=>{
+        return { title:e["QUEM REALIZOU"]+' - '+e.HS+'h', start:e.DATA, extendedProps:e };
+      })
     });
     calendarInstance.render();
   }
 }
 
-function aplicarPeriodoGraficos(){atualizarGraficosComVisiveis();}
+// Charts
+function inicializarGraficos(){
+  const ctx1=document.getElementById('chartHorasMedico').getContext('2d');
+  chartHorasMedico=new Chart(ctx1,{ type:'bar', data:{labels:[],datasets:[{label:'Horas',data:[],backgroundColor:'#4e73df'}]}, options:{ responsive:true, plugins:{legend:{display:false}}} });
+  const ctx2=document.getElementById('chartValoresEspecialidade').getContext('2d');
+  chartValoresEspecialidade=new Chart(ctx2,{ type:'bar', data:{labels:[],datasets:[{label:'Valores R$',data:[],backgroundColor:'#1cc88a'}]}, options:{ responsive:true, plugins:{legend:{display:false}}} });
+  const ctx3=document.getElementById('chartEvolucao').getContext('2d');
+  chartEvolucao=new Chart(ctx3,{ type:'line', data:{labels:[],datasets:[{label:'Horas',data:[],fill:false,borderColor:'#36b9cc'}]}, options:{ responsive:true } });
+  atualizarGraficosComVisiveis();
+}
 
+function atualizarGraficosComVisiveis(){
+  const filteredPlantao=Array.from(document.querySelectorAll('#plantoesBody tr')).map(tr=>{
+    const idx=tr.rowIndex-1;
+    return plantoesData[idx];
+  });
+
+  const horasPorMedico={}, valoresPorEsp={}, evolucaoDiaria={};
+  filteredPlantao.forEach(p=>{
+    const med=p["QUEM REALIZOU"]||'';
+    horasPorMedico[med]=(horasPorMedico[med]||0)+parseFloat(p.HS||0);
+    const esp=p.ESPECIALIDADE||'';
+    valoresPorEsp[esp]=(valoresPorEsp[esp]||0)+parseFloat(p["VALOR TOTAL R$"]||0);
+    const dt=p.DATA||'';
+    evolucaoDiaria[dt]=(evolucaoDiaria[dt]||0)+parseFloat(p.HS||0);
+  });
+
+  chartHorasMedico.data.labels=Object.keys(horasPorMedico);
+  chartHorasMedico.data.datasets[0].data=Object.values(horasPorMedico);
+  chartHorasMedico.update();
+
+  chartValoresEspecialidade.data.labels=Object.keys(valoresPorEsp);
+  chartValoresEspecialidade.data.datasets[0].data=Object.values(valoresPorEsp);
+  chartValoresEspecialidade.update();
+
+  chartEvolucao.data.labels=Object.keys(evolucaoDiaria);
+  chartEvolucao.data.datasets[0].data=Object.values(evolucaoDiaria);
+  chartEvolucao.update();
+}
+
+function aplicarPeriodoGraficos(){ filtrarTudo(); }
+
+// Inicializar
+document.addEventListener('DOMContentLoaded',()=>{ loadData(); });
 </script>
 </body>
 </html>
