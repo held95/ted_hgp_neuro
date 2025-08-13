@@ -143,21 +143,54 @@ function atualizarTudo(){
   renderEletivas(eletivasData);
 }
 
-// Somatório de Horas por Médico
-function calcularHorasNeuro(nome){
-  return plantoesData
-    .filter(p => p["QUEM REALIZOU"] === nome)
-    .reduce((acc,p)=>acc + parseFloat(p.HS || 0),0)
-    .toFixed(2);
+// Converte HH:MM:SS para segundos
+function hhmmssToSeconds(hhmmss){
+  const parts = hhmmss.split(':').map(Number);
+  if(parts.length!==3) return 0;
+  return parts[0]*3600 + parts[1]*60 + parts[2];
 }
 
+// Converte segundos para HH:MM:SS
+function secondsToHHMMSS(secs){
+  const h = Math.floor(secs/3600);
+  const m = Math.floor((secs%3600)/60);
+  const s = secs%60;
+  return [h,m,s].map(v=>v.toString().padStart(2,'0')).join(':');
+}
+
+// Salvar alterações Plantões
+function salvarHoras(){
+  const novaHora = document.getElementById('horasInput').value.trim();
+  if(!/^(\d{1,2}):(\d{2}):(\d{2})$/.test(novaHora)) return alert('Insira um horário válido (HH:MM:SS)');
+
+  const novaSegundos = hhmmssToSeconds(novaHora);
+
+  document.querySelectorAll('#plantoesBody tr.selected').forEach(tr=>{
+    const idx = tr.rowIndex - 1;
+    plantoesData[idx].HS = novaSegundos; // armazena em segundos
+    tr.cells[9].innerText = novaHora;    // exibe HH:MM:SS
+  });
+
+  renderTable(jsonData); // atualiza tabela TED + Mutirão
+}
+
+// Calcular Horas Neuro
+function calcularHorasNeuro(nome){
+  const totalSegundos = plantoesData
+    .filter(p => p["QUEM REALIZOU"] === nome)
+    .reduce((acc,p)=>acc + (parseInt(p.HS)||0),0);
+  return secondsToHHMMSS(totalSegundos);
+}
+
+// Renderiza tabela TED + Mutirão
 function renderTable(data){
-  const tbody=document.getElementById('tableBody'); tbody.innerHTML='';
+  const tbody=document.getElementById('tableBody'); 
+  tbody.innerHTML='';
   data.forEach(it=>{
     const totalEletivas = eletivasData
       .filter(e => e.Médico===it.Nome)
       .reduce((acc,e)=>acc + parseFloat(String(e["Valor R$"]||0)),0);
-    const horasNeuro = calcularHorasNeuro(it.Nome);
+    const horasNeuro = calcularHorasNeuro(it.Nome); // HH:MM:SS
     const row=`<tr>
       <td>${it.Nome||''}</td>
       <td>${it.CRM||''}</td>
@@ -172,20 +205,23 @@ function renderTable(data){
   });
 }
 
+// Renderiza tabela Plantões
 function renderPlantoes(data){
   const tbody=document.getElementById('plantoesBody'); tbody.innerHTML='';
   data.forEach(it=>{
+    const horasDisplay = it.HS ? secondsToHHMMSS(parseInt(it.HS)) : '';
     const row=`<tr>
       <td>${it.DATA||''}</td><td>${it.PER||''}</td><td>${it.DS||''}</td>
       <td>${it["QUEM REALIZOU"]||''}</td><td>${it.CRM||''}</td>
       <td>${it.FUNCAO||''}</td><td>${it.ESPECIALIDADE||''}</td>
       <td>${it.ENTRADA||''}</td><td>${it.SAIDA||''}</td>
-      <td>${it.HS||''}</td><td>${it["VALOR HORA"]||''}</td><td>${it["VALOR TOTAL R$"]||''}</td>
+      <td>${horasDisplay}</td><td>${it["VALOR HORA"]||''}</td><td>${it["VALOR TOTAL R$"]||''}</td>
     </tr>`;
     tbody.insertAdjacentHTML('beforeend',row);
   });
 }
 
+// Renderiza tabela Eletivas
 function renderEletivas(data){
   const tbody=document.getElementById('eletivasBody'); tbody.innerHTML='';
   (data||[]).forEach(it=>{
@@ -201,6 +237,7 @@ function renderEletivas(data){
   });
 }
 
+// Filtros
 function filtrarTudo(){
   const texto = document.getElementById('searchInput').value.toLowerCase();
   const inicio = document.getElementById('dataInicio').value;
@@ -228,6 +265,20 @@ function resetarTudo(){
   atualizarTudo();
 }
 
+// Seleção de linhas
+document.addEventListener('click',e=>{
+  if(e.target.tagName==='TD'){
+    const tr=e.target.closest('tr');
+    if(tr.parentNode.id==='plantoesBody' || tr.parentNode.id==='eletivasBody'){
+      if(!e.ctrlKey && !e.metaKey){
+        tr.parentNode.querySelectorAll('tr').forEach(r=>r.classList.remove('selected'));
+      }
+      tr.classList.toggle('selected');
+    }
+  }
+});
+
+// Calendário FullCalendar
 function toggleCalendario(){
   calendarioVisivel = !calendarioVisivel;
   const table = document.getElementById('plantoesTable');
@@ -253,74 +304,8 @@ function toggleCalendario(){
   }
 }
 
-document.addEventListener('click',e=>{
-  if(e.target.tagName==='TD'){
-    const tr=e.target.closest('tr');
-    if(tr.parentNode.id==='plantoesBody' || tr.parentNode.id==='eletivasBody'){
-      if(!e.ctrlKey && !e.metaKey){
-        tr.parentNode.querySelectorAll('tr').forEach(r=>r.classList.remove('selected'));
-      }
-      tr.classList.toggle('selected');
-    }
-  }
-});
-
-// Converte HH:MM:SS para segundos
-function hhmmssToSeconds(hhmmss){
-  const parts = hhmmss.split(':').map(Number);
-  if(parts.length!==3) return 0;
-  return parts[0]*3600 + parts[1]*60 + parts[2];
-}
-
-// Converte segundos para HH:MM:SS
-function secondsToHHMMSS(secs){
-  const h = Math.floor(secs/3600);
-  const m = Math.floor((secs%3600)/60);
-  const s = secs%60;
-  return [h,m,s].map(v=>v.toString().padStart(2,'0')).join(':');
-}
-
-// Salvar alterações Plantões
-function salvarHoras(){
-  const novaHora = document.getElementById('horasInput').value.trim();
-  if(!/^(\d{1,2}):(\d{2}):(\d{2})$/.test(novaHora)) return alert('Insira um horário válido (HH:MM:SS)');
-  const novaSegundos = hhmmssToSeconds(novaHora);
-
-  document.querySelectorAll('#plantoesBody tr.selected').forEach(tr=>{
-    const idx = tr.rowIndex - 1;
-    plantoesData[idx].HS = novaSegundos; // armazena em segundos
-    tr.cells[9].innerText = novaHora;    // exibe HH:MM:SS
-  });
-
-  atualizarTudo(); // atualiza Dados TED + Mutirão
-}
-
-// Calcular Horas Neuro somando segundos e convertendo para HH:MM:SS
-function calcularHorasNeuro(nome){
-  const totalSegundos = plantoesData
-    .filter(p => p["QUEM REALIZOU"] === nome)
-    .reduce((acc,p)=>acc + (parseInt(p.HS)||0),0);
-  return secondsToHHMMSS(totalSegundos);
-}
-
-// Ajuste no renderTable
-function renderTable(data){
-  const tbody=document.getElementById('tableBody'); tbody.innerHTML='';
-  data.forEach(it=>{
-    const totalEletivas = eletivasData
-      .filter(e => e.Médico===it.Nome)
-      .reduce((acc,e)=>acc + parseFloat(String(e["Valor R$"]||0)),0);
-    const horasNeuro = calcularHorasNeuro(it.Nome);
-    const row=`<tr>
-      <td>${it.Nome||''}</td>
-      <td>${it.CRM||''}</td>
-      <td>${it.ESPECIALIDADE||''}</td>
-      <td>${it["Valor ELET"]||0}</td>
-      <td>${it["Valor Amb"]||0}</td>
-      <td>${it.Mutirao||0}</td>
-      <td>${horasNeuro}</td>
-      <td>${totalEletivas.toFixed(2)}</td>
-    </tr>`;
-    tbody.insertAdjacentHTML('beforeend',row);
-  });
-}
+// Inicializa
+loadData();
+</script>
+</body>
+</html>
