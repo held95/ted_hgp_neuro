@@ -18,7 +18,7 @@
     .tab { padding:8px 14px; background:#ddd; border-radius:8px 8px 0 0; cursor:pointer; user-select:none; border:1px solid #ccc; }
     .tab.active { background:white; font-weight:700; border-bottom:1px solid white; }
     .tab-content { background:white; padding:12px; border:1px solid #ccc; border-radius:0 10px 10px 10px; }
-    #plantoesBody tr.selected { background:#a3d5ff; }
+    #plantoesBody tr.selected, #eletivasBody tr.selected { background:#a3d5ff; }
     #calendar { max-width:100% !important; width:100% !important; margin:0 auto; }
     .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     .chart-card { background:white; padding:10px; border-radius:8px; border:1px solid #ddd; }
@@ -94,7 +94,6 @@
     <div style="margin-bottom:10px;">
       <button id="toggleCalendarBtn" onclick="toggleCalendario()">Alternar para Calendário</button>
     </div>
-
     <table id="plantoesTable" style="display:table;">
       <thead>
         <tr>
@@ -103,7 +102,6 @@
       </thead>
       <tbody id="plantoesBody"></tbody>
     </table>
-
     <div id="calendar" style="display:none; margin-top:20px;"></div>
   </div>
 
@@ -124,21 +122,10 @@
   </div>
 
   <div id="tabContent-eletivas" class="tab-content" style="display:none;">
-    <table id="eletivasTable" style="width:100%; border-collapse:collapse;">
+    <table id="eletivasTable">
       <thead>
         <tr>
-          <th>Data do procedimento</th>
-          <th>Dia da semana</th>
-          <th>Nome do paciente</th>
-          <th>Paciente</th>
-          <th>RH</th>
-          <th>Procedimento 1</th>
-          <th>Procedimento 2</th>
-          <th>Porte</th>
-          <th>Valor R$</th>
-          <th>Médico</th>
-          <th>CRM</th>
-          <th>Assistentes 1</th>
+          <th>Data do procedimento</th><th>Dia da semana</th><th>Nome do paciente</th><th>Paciente</th><th>RH</th><th>Procedimento 1</th><th>Procedimento 2</th><th>Porte</th><th>Valor R$</th><th>Médico</th><th>CRM</th><th>Assistentes 1</th>
         </tr>
       </thead>
       <tbody id="eletivasBody"></tbody>
@@ -146,20 +133,17 @@
   </div>
 
   <script>
-    // ---------- estado ----------
-    let jsonData = [], mutiraoData = [], plantoesData = [], eletivasData = [];
-    let calendarInstance = null, calendarioVisivel = false;
-    let chartHorasMedico = null, chartValoresEspecialidade = null, chartEvolucao = null;
+    let jsonData=[], mutiraoData=[], plantoesData=[], eletivasData=[];
+    let calendarInstance=null, calendarioVisivel=false;
+    let chartHorasMedico=null, chartValoresEspecialidade=null, chartEvolucao=null;
 
-    // ---------- helpers ----------
     function debounce(fn, wait=250){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
     function msgErro(e){ console.error(e); alert("Erro (veja console): " + (e && e.message ? e.message : e)); }
 
-    // ---------- carregar dados ----------
     async function loadData(){
       try{
         const resp = await fetch("dados.json");
-        if(!resp.ok) throw new Error("dados.json não encontrado (status " + resp.status + "). Coloque o arquivo no mesmo diretório.");
+        if(!resp.ok) throw new Error("dados.json não encontrado.");
         const data = await resp.json();
         jsonData = data.TED_teste || [];
         mutiraoData = data.Mutirao || [];
@@ -173,7 +157,6 @@
       }catch(e){ msgErro(e); }
     }
 
-    // ---------- render TED ----------
     function renderTable(data){
       const somaHorasPorMed = {};
       plantoesData.forEach(it=>{
@@ -194,62 +177,52 @@
           <td>${entry.ESPECIALIDADE||""}</td>
           <td>${entry["Valor ELET"]||0}</td>
           <td>${(entry["Valor Amb"]||0).toFixed ? (entry["Valor Amb"]||0).toFixed(2) : entry["Valor Amb"]||0}</td>
-          <td>${entry.Mutirão||""}</td>
+          <td>${entry.Mutirao||0}</td>
           <td>${hn.toFixed(2)}</td>
         </tr>`;
         tbody.insertAdjacentHTML("beforeend", row);
       });
     }
 
-    // ---------- render plantoes ----------
     function renderPlantoes(data){
       const tbody = document.getElementById("plantoesBody");
-      tbody.innerHTML = "";
+      tbody.innerHTML="";
       (data||[]).forEach(item=>{
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
+        const row = `<tr>
           <td>${item.DATA||""}</td>
           <td>${item.PER||""}</td>
           <td>${item.DS||""}</td>
           <td>${item["QUEM REALIZOU"]||""}</td>
           <td>${item.CRM||""}</td>
-          <td>${item.FUNCÃO||""}</td>
+          <td>${item.FUNCAO||""}</td>
           <td>${item.ESPECIALIDADE||""}</td>
           <td>${item.ENTRADA||""}</td>
           <td>${item.SAIDA||""}</td>
           <td>${item.HS||""}</td>
           <td>${item["VALOR HORA"]||""}</td>
           <td>${item["VALOR TOTAL R$"]||""}</td>
-        `;
-        tr.addEventListener("click", function(e){
-          if(e.ctrlKey || e.metaKey) this.classList.toggle("selected");
-          else { clearSelection(); this.classList.add("selected"); }
-        });
-        tbody.appendChild(tr);
+        </tr>`;
+        tbody.insertAdjacentHTML("beforeend", row);
       });
     }
 
-    function clearSelection(){ document.querySelectorAll("#plantoesBody tr.selected").forEach(r=>r.classList.remove("selected")); }
-
-    // ---------- render Eletivas Vascular ----------
     function renderEletivasVascular(data){
       const tbody = document.getElementById("eletivasBody");
-      tbody.innerHTML = "";
+      tbody.innerHTML="";
       (data||[]).forEach(item=>{
-        if(!item) return;
         const row = `<tr>
-          <td>${item["Data do procedimento"] || ""}</td>
-          <td>${item["Dia da semana"] || ""}</td>
-          <td>${item["Nome do paciente"] || ""}</td>
-          <td>${item["Paciente"] || ""}</td>
-          <td>${item["RH"] || ""}</td>
-          <td>${item["Procedimento 1"] || ""}</td>
-          <td>${item["Procedimento 2"] || ""}</td>
-          <td>${item["Porte"] || ""}</td>
-          <td>${item["Valor R$"] !== undefined ? item["Valor R$"].toFixed(2) : ""}</td>
-          <td>${item["Médico"] || ""}</td>
-          <td>${item["CRM"] || ""}</td>
-          <td>${item["Assistentes 1"] || ""}</td>
+          <td>${item["Data do procedimento"]||""}</td>
+          <td>${item["Dia da semana"]||""}</td>
+          <td>${item["Nome do paciente"]||""}</td>
+          <td>${item["Paciente"]||""}</td>
+          <td>${item["RH"]||""}</td>
+          <td>${item["Procedimento 1"]||""}</td>
+          <td>${item["Procedimento 2"]||""}</td>
+          <td>${item["Porte"]||""}</td>
+          <td>${item["Valor R$"]||""}</td>
+          <td>${item["Médico"]||""}</td>
+          <td>${item["CRM"]||""}</td>
+          <td>${item["Assistentes 1"]||""}</td>
         </tr>`;
         tbody.insertAdjacentHTML("beforeend", row);
       });
@@ -261,33 +234,34 @@
       const s = String(hhmmss).trim();
       if(!s) return 0;
       const parts = s.split(":");
-      if(parts.length === 1){ const v = parseFloat(s.replace(",", ".")); return isNaN(v)?0:v; }
-      const h = parseInt(parts[0],10)||0, m = parseInt(parts[1],10)||0, sec = parseInt(parts[2]||0,10)||0;
+      if(parts.length === 1){ const v=parseFloat(s.replace(",", ".")); return isNaN(v)?0:v; }
+      const h = parseInt(parts[0],10)||0, m=parseInt(parts[1],10)||0, sec=parseInt(parts[2]||0,10)||0;
       return h + m/60 + sec/3600;
     }
     function converterDecimalParaHHMMSS(decimalHours){
-      const h = Math.floor(decimalHours), m = Math.floor((decimalHours - h) * 60), s = Math.round(((decimalHours - h) * 60 - m) * 60);
-      const pad = n => String(n).padStart(2,'0'); return `${pad(h)}:${pad(m)}:${pad(s)}`;
+      const h = Math.floor(decimalHours), m = Math.floor((decimalHours - h)*60), s = Math.round(((decimalHours - h)*60 - m)*60);
+      const pad = n => String(n).padStart(2,'0');
+      return `${pad(h)}:${pad(m)}:${pad(s)}`;
     }
 
     // ---------- salvar horas ----------
     function salvarHoras(){
       try{
-        let v = (document.getElementById("horasInput").value || "").replace(",",".").trim();
-        const valor = parseFloat(v);
-        if(isNaN(valor) || valor < 0){ alert("Informe um valor válido"); return; }
+        let v = (document.getElementById("horasInput").value||"").replace(",",".").trim();
+        const valor=parseFloat(v);
+        if(isNaN(valor)||valor<0){ alert("Informe um valor válido"); return; }
         const selecionadas = Array.from(document.querySelectorAll("#plantoesBody tr.selected"));
-        if(selecionadas.length === 0){ alert("Selecione ao menos uma linha"); return; }
+        if(selecionadas.length===0){ alert("Selecione ao menos uma linha"); return; }
 
         selecionadas.forEach(row=>{
-          const cells = row.children;
-          const dataLinha = (cells[0].textContent || "").trim().split(" ")[0] || "";
-          const crmLinha = String((cells[4].textContent || "").trim());
+          const cells=row.children;
+          const dataLinha=(cells[0].textContent||"").trim().split(" ")[0]||"";
+          const crmLinha=String((cells[4].textContent||"").trim());
           for(let i=0;i<plantoesData.length;i++){
-            const it = plantoesData[i];
-            const dataIt = String(it.DATA||"").split(" ")[0] || "";
-            if(String(it.CRM) === crmLinha && dataIt === dataLinha){
-              it.HS = converterDecimalParaHHMMSS(valor);
+            const it=plantoesData[i];
+            const dataIt=String(it.DATA||"").split(" ")[0]||"";
+            if(String(it.CRM)===crmLinha && dataIt===dataLinha){
+              it.HS=converterDecimalParaHHMMSS(valor);
             }
           }
         });
@@ -304,42 +278,43 @@
     }
 
     function atualizarHorasNeuro(){
-      const soma = {};
+      const soma={};
       plantoesData.forEach(it=>{
-        const nome = (it["QUEM REALIZOU"]||"").trim().toLowerCase();
-        soma[nome] = (soma[nome]||0) + converterTempoDecimal(it.HS||"00:00:00");
+        const nome=(it["QUEM REALIZOU"]||"").trim().toLowerCase();
+        soma[nome]=(soma[nome]||0)+converterTempoDecimal(it.HS||"00:00:00");
       });
-      jsonData.forEach(ent => {
-        ent["Horas Neuro"] = soma[(ent.Nome||"").trim().toLowerCase()] || 0;
+      jsonData.forEach(ent=>{
+        ent["Horas Neuro"]=soma[(ent.Nome||"").trim().toLowerCase()]||0;
       });
       renderTable(jsonData);
     }
 
     // ---------- filtros ----------
     function filtrarTudo(){
-      const q = (document.getElementById("searchInput").value||"").toLowerCase().trim();
-      const di = document.getElementById("dataInicio").value;
-      const df = document.getElementById("dataFim").value;
+      const q=(document.getElementById("searchInput").value||"").toLowerCase().trim();
+      const di=document.getElementById("dataInicio").value;
+      const df=document.getElementById("dataFim").value;
 
-      const filteredTed = jsonData.filter(e=>{
+      const filteredTed=jsonData.filter(e=>{
         if(!q) return true;
-        return (e.Nome||"").toLowerCase().includes(q) || String(e.CRM||"").includes(q) || (e.ESPECIALIDADE||"").toLowerCase().includes(q);
+        return (e.Nome||"").toLowerCase().includes(q)||String(e.CRM||"").includes(q)||(e.ESPECIALIDADE||"").toLowerCase().includes(q);
       });
 
-      const filteredPl = plantoesData.filter(it=>{
-        const nome = (it["QUEM REALIZOU"]||"").toLowerCase();
-        const crm = String(it.CRM||"");
-        const esp = (it.ESPECIALIDADE||"").toLowerCase();
-        const dataPart = String(it.DATA||"").split(" ")[0] || "";
-        let okText = !q || nome.includes(q) || crm.includes(q) || esp.includes(q);
-        let okDate = true;
-        if(di) okDate = okDate && (dataPart >= di);
-        if(df) okDate = okDate && (dataPart <= df);
+      const filteredPl=plantoesData.filter(it=>{
+        const nome=(it["QUEM REALIZOU"]||"").toLowerCase();
+        const crm=String(it.CRM||"");
+        const esp=(it.ESPECIALIDADE||"").toLowerCase();
+        const dataPart=String(it.DATA||"").split(" ")[0]||"";
+        let okText=!q||nome.includes(q)||crm.includes(q)||esp.includes(q);
+        let okDate=true;
+        if(di) okDate=okDate&&(dataPart>=di);
+        if(df) okDate=okDate&&(dataPart<=df);
         return okText && okDate;
       });
 
       renderTable(filteredTed);
       renderPlantoes(filteredPl);
+      renderEletivasVascular(eletivasData); // sempre atualiza aba Eletivas
 
       if(calendarInstance && calendarioVisivel){
         calendarInstance.removeAllEvents();
@@ -348,16 +323,17 @@
       atualizarGraficos(filteredPl);
     }
 
-    document.addEventListener("DOMContentLoaded", ()=> {
-      document.getElementById("searchInput").addEventListener("input", debounce(()=>filtrarTudo(), 200));
+    document.addEventListener("DOMContentLoaded",()=>{
+      document.getElementById("searchInput").addEventListener("input",debounce(()=>filtrarTudo(),200));
     });
 
     function resetarTudo(){
-      document.getElementById("searchInput").value = "";
-      document.getElementById("dataInicio").value = "";
-      document.getElementById("dataFim").value = "";
+      document.getElementById("searchInput").value="";
+      document.getElementById("dataInicio").value="";
+      document.getElementById("dataFim").value="";
       renderTable(jsonData);
       renderPlantoes(plantoesData);
+      renderEletivasVascular(eletivasData);
       if(calendarInstance && calendarioVisivel){
         calendarInstance.removeAllEvents();
         calendarInstance.addEventSource(mapearEventosPlantao(plantoesData));
