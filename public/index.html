@@ -133,34 +133,38 @@ async function loadData(){
     const resp = await fetch('dados.json');
     if(!resp.ok) throw new Error('dados.json não encontrado');
     const data = await resp.json();
-    jsonData = data.TED_teste||[];
-    mutiraoData = data.Mutirao||[]; // array de mutirões
-    plantoesData = data.Resumo_Plantao_HOSP_NCR_PLANT||[];
-    eletivasData = data.Eletivas_Vascular||[];
-    atualizarTudo();
-  }catch(e){ console.error(e); alert('Erro ao carregar dados: '+e.message);}
-}
 
-// Atualiza todas as tabelas
-function atualizarTudo(){
-  renderTable(jsonData);
-  renderPlantoes(plantoesData);
-  renderEletivas(eletivasData);
+    // Verifica se existe "Mutirão" ou "Mutirao" no JSON
+    mutiraoData = data["Mutirão"] || data["Mutirao"] || [];
+
+    jsonData = data.TED_teste || [];
+    plantoesData = data.Resumo_Plantao_HOSP_NCR_PLANT || [];
+    eletivasData = data.Eletivas_Vascular || [];
+    
+    atualizarTudo();
+  }catch(e){ 
+    console.error(e); 
+    alert('Erro ao carregar dados: '+e.message);
+  }
 }
 
 // Renderizar tabela Dados TED + Mutirão
 function renderTable(data){
-  const tbody=document.getElementById('tableBody'); tbody.innerHTML='';
+  const tbody=document.getElementById('tableBody'); 
+  tbody.innerHTML='';
+  
   data.forEach(it=>{
-    // Total de Eletivas do médico
+    const nomeMed = String(it.Nome||'').trim().toLowerCase();
+
+    // Total de Eletivas
     const totalEletivas = eletivasData
-      .filter(e => e.Médico===it.Nome)
-      .reduce((acc,e)=>acc + parseFloat(String(e["Valor R$"]||0)),0);
+      .filter(e => String(e.Médico||'').trim().toLowerCase() === nomeMed)
+      .reduce((acc,e)=> acc + parseFloat(String(e["Valor R$"]||0).replace(',','.')), 0);
     
-    // Total de Mutirão do médico
+    // Total de Mutirão
     const totalMutirao = mutiraoData
-      .filter(m => m.Médico === it.Nome)
-      .reduce((acc,m)=> acc + parseFloat(m["Valor R$"]||0), 0);
+      .filter(m => String(m.Médico||'').trim().toLowerCase() === nomeMed)
+      .reduce((acc,m)=> acc + parseFloat(String(m["Valor R$"]||0).replace(',','.')), 0);
 
     const row=`<tr>
       <td>${it.Nome||''}</td>
