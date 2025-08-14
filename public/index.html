@@ -134,25 +134,27 @@ async function loadData(){
     if(!resp.ok) throw new Error('dados.json não encontrado');
     const data = await resp.json();
 
-    // Verifica se existe "Mutirão" ou "Mutirao" no JSON
+    // Garante leitura mesmo com acento ou sem
     mutiraoData = data["Mutirão"] || data["Mutirao"] || [];
 
     jsonData = data.TED_teste || [];
     plantoesData = data.Resumo_Plantao_HOSP_NCR_PLANT || [];
     eletivasData = data.Eletivas_Vascular || [];
-    
+
     atualizarTudo();
-  }catch(e){ 
-    console.error(e); 
-    alert('Erro ao carregar dados: '+e.message);
-  }
+  }catch(e){ console.error(e); alert('Erro ao carregar dados: '+e.message); }
+}
+
+// Atualiza todas as tabelas
+function atualizarTudo(){
+  renderTable(jsonData);
+  renderPlantoes(plantoesData);
+  renderEletivas(eletivasData);
 }
 
 // Renderizar tabela Dados TED + Mutirão
 function renderTable(data){
-  const tbody=document.getElementById('tableBody'); 
-  tbody.innerHTML='';
-  
+  const tbody=document.getElementById('tableBody'); tbody.innerHTML='';
   data.forEach(it=>{
     const nomeMed = String(it.Nome||'').trim().toLowerCase();
 
@@ -303,7 +305,7 @@ function salvarEletivas(){
 
 document.addEventListener('DOMContentLoaded',()=>{ loadData(); });
 
-// Exportar CSV (opcional)
+// Exportar CSV
 function exportarCSV(){
   let csvContent = "data:text/csv;charset=utf-8,";
   const headers = ["Nome","CRM","Especialidade","Valor ELET","Valor Amb","Mutirão","Horas Neuro","Eletivas VASC"];
